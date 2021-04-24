@@ -18,3 +18,7 @@ explore: MRR {
 explore: agency {
   from: agency
 }
+
+explore: revenue_growth {
+
+}

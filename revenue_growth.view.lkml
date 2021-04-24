@@ -1,22 +1,25 @@
-view: mrr {
+view: revenue_growth {
   derived_table: {
-    sql:
-    -- stripe to SF invoice
-    With abs as (
+    sql: With abs as (
           select distinct * from
               (select
-                bill.lastmodifieddate,
                 account__c,
-                bill.id as billing_id,  -- unique for each invoice
+                bill.id as billing_id,  -- unique for each invoice,
+                invoiceid__c as invoice_id, -- unique for each invoice, but may be null
+                name as payment_name, -- same as billing id, unique
                 amount__c AS invoice,
+                refund_reason__c,
                 DATE(date2__c) AS stripe_created_invoice_date,  -- is it?
                 description__c,
+                notes__c,
+                isdsp__c,
                 parent_logo__c,
                 rank() over (partition by  account__c, bill.id order by bill.lastmodifieddate desc) as rank
                 FROM `pogon-155405.salesforce_to_bigquery.Payments__c` bill
                where isdeleted is False
                and amount__c != 0
                and amount__c is not null
+               and account__c != '0011U00001ekFIFQA2' -- for resurrected edge case: ge__c = '6048'
                and (((parent_logo__c is null and description__c like '%Media Fee%') and
                     (parent_logo__c is null and description__c not like 'Target-Media Cost'))
                     or parent_logo__c is not null)
@@ -35,18 +38,25 @@ view: mrr {
             from
                (select *
                 from
-                     (SELECT *, row_number() over (partition by id  order by lastmodifieddate desc) as row_number
+                     (SELECT *, row_number() over (partition by id order by lastmodifieddate desc) as row_number
                      FROM `pogon-155405.salesforce_to_bigquery.Account` ) b
-                where b.row_number = 1 )),
+                where b.row_number = 1
+                and id != '0011U00001ekFIFQA2' -- for resurrected edge case: ge__c = '6048'
+                )),
 
     -- append account info to invoice
         base as
           (select
               account__c as account_id,
-              billing_id,
               stripe_created_invoice_date as dt,
-              invoice as invoice,
+              billing_id,
+              invoice_id,
+              invoice,
+              payment_name,
               description__c,
+              refund_reason__c,
+              notes__c,
+              isdsp__c,
               parent_logo__c,
               dedup.ge__c,
               dedup.name,
@@ -76,9 +86,16 @@ view: mrr {
               select
                   date_trunc(dt, month) as month,
                   account_id,
+                  parent_logo__c,
+                  ge__c,
+                  name,
+                  type_of_customer__c,
+                  churn_date__c,
+                   resurrected_date__c,
+                   parent_customertype,
                   sum(invoice) as invoice
               from base
-              group by 1,2
+              group by 1,2,3,4,5,6,7,8,9
               having invoice > 0 -- for edge cases id '0011U00000Ouun4QAB' who was charged and refunded on 2019-8-15, so its monthly fee cancelled out
           ),
 
@@ -96,25 +113,31 @@ view: mrr {
     -- Append first payment month (start date) to each account
           month_aggregated_append as (
               select
-                  m.month,
-                  m.account_id,
-                  m.invoice,
+                  m.*,
                   f.first_month
               from month_aggregated m join first_dt f
               using (account_id)
           ),
 
      -- calculate revenue growth
+     -- has to be at month-account-ge__c granularity, we lost all the individual billing, invoice info here
           revenue_growth as (
            select
+            coalesce(tm.account_id, lm.account_id) as account,
           -- payment date for this month
             coalesce(tm.month, date_add(lm.month, interval 1 month)) as month,
+            tm.parent_logo__c,
+            tm.ge__c,
+            tm.name,
+            tm.type_of_customer__c,
+            tm.churn_date__c,
+            tm.resurrected_date__c,
+            tm.parent_customertype,
 
           -- sum up this month's invoice as revenue
-            sum(tm.invoice) as revenue,
+            tm.invoice as revenue,
 
           -- retained revenue from last month
-            sum(
                 -- if this month received more, use last month as retained (retained and gained some)
                  case when tm.account_id is not NULL and lm.account_id is not NULL and tm.invoice >= lm.invoice
                  then lm.invoice
@@ -122,26 +145,23 @@ view: mrr {
                  when tm.account_id is not NULL and lm.account_id is not NULL and tm.invoice < lm.invoice
                  then tm.invoice
                  else 0 end
-               ) as retained,
+                 as retained,
 
           -- new revenue from newly onboarded clients
-            sum(
                -- if first payment month is this month, then new revenue
                 case when tm.first_month = tm.month then tm.invoice
                 else 0 end
-            ) as new_,
+                as new_,
 
           -- existing clients spent more for this month
-            sum(
                 case when tm.month != tm.first_month
                     and tm.account_id is not NULL and lm.account_id is not NULL
                     and tm.invoice > lm.invoice
                     and lm.invoice > 0 then tm.invoice - lm.invoice
                 else 0 end
-            ) as expansion,
+                as expansion,
 
           -- churned clients came back for this month
-            sum(
                 case when tm.account_id is not NULL
                 -- last month did not pay
                     and (lm.account_id is NULL or lm.invoice = 0)
@@ -149,19 +169,18 @@ view: mrr {
                     and tm.invoice > 0 and tm.first_month != tm.month
                     then tm.invoice
                 else 0 end
-            ) as resurrected,
+                as resurrected,
 
           -- existing clients spent less for this month
-            -1 * sum(
-                case when tm.month != tm.first_month
+            -1 *
+                (case when tm.month != tm.first_month
                      and tm.account_id is not NULL and lm.account_id is not NULL
                      and tm.invoice < lm.invoice and tm.invoice > 0
                      then lm.invoice - tm.invoice
-                else 0 end
-            ) as contraction,
+                else 0 end) as contraction,
 
           -- churned clients
-            -1 * sum(
+            -1 * (
                 case when lm.invoice > 0 and (tm.account_id is NULL or tm.invoice = 0)
                 then lm.invoice else 0 end
             ) as churned
@@ -175,12 +194,11 @@ view: mrr {
             on (tm.account_id = lm.account_id
                 and date_add(lm.month, interval 1 month) = tm.month
             )
-       group by 1
-       order by 1
+       order by 1,2
           )
 
           select * from revenue_growth
-       ;;
+ ;;
   }
 
   measure: count {
@@ -188,62 +206,148 @@ view: mrr {
     drill_fields: [detail*]
   }
 
+  dimension: account {
+    type: string
+    sql: ${TABLE}.account ;;
+  }
+
   dimension: month {
-    type: date_month
+    type: date
     datatype: date
     sql: ${TABLE}.month ;;
   }
 
-  measure: revenue {
-    type: sum
+  dimension: parent_logo__c {
+    type: string
+    sql: ${TABLE}.parent_logo__c ;;
+  }
+
+  dimension: ge__c {
+    type: string
+    sql: ${TABLE}.ge__c ;;
+  }
+
+  dimension: name {
+    type: string
+    sql: ${TABLE}.name ;;
+  }
+
+  dimension: type_of_customer__c {
+    type: string
+    sql: ${TABLE}.type_of_customer__c ;;
+  }
+
+  dimension_group: churn_date__c {
+    type: time
+    sql: ${TABLE}.churn_date__c ;;
+  }
+
+  dimension_group: resurrected_date__c {
+    type: time
+    sql: ${TABLE}.resurrected_date__c ;;
+  }
+
+  dimension: parent_customertype {
+    type: string
+    sql: ${TABLE}.parent_customertype ;;
+  }
+
+  measure: account_revenue {
+    type: number
     sql: ${TABLE}.revenue ;;
   }
 
-  measure: retained {
-    type: sum
-    sql: ${TABLE}.retained ;;
+  measure: revenue {
+    type:  sum
+    sql: ${TABLE}.revenue ;;
+
   }
 
-  measure: new {
-    type: sum
+  measure: account_retained {
+    type: number
+    sql: ${TABLE}.retained ;;
+    drill_fields: [detail*]
+  }
+
+  measure: retained {
+    type:  sum
+    sql: ${TABLE}.retained ;;
+
+  }
+
+  measure: account_new {
+    type: number
     sql: ${TABLE}.new_ ;;
   }
 
-  measure: expansion {
-    type: sum
+  measure: new {
+    type:  sum
+    sql: ${TABLE}.new_ ;;
+
+  }
+
+  measure: account_expansion {
+    type: number
     sql: ${TABLE}.expansion ;;
   }
 
-  measure: resurrected {
-    type: sum
+  measure: expansion {
+    type:  sum
+    sql: ${TABLE}.new_ ;;
+
+  }
+
+  measure: account_resurrected {
+    type: number
     sql: ${TABLE}.resurrected ;;
   }
 
-  measure: contraction {
-    type: sum
+  measure: resurrected {
+    type:  sum
+    sql: ${TABLE}.resurrected ;;
+
+  }
+
+  measure: account_contraction {
+    type: number
     sql: ${TABLE}.contraction ;;
   }
 
-  measure: churned {
-    type: sum
+  measure: contraction {
+    type:  sum
+    sql: ${TABLE}.contraction ;;
+
+  }
+
+  measure: account_churned {
+    type: number
     sql: ${TABLE}.churned ;;
   }
 
-  # filter: parent_agency_identifier {
-  #   type: string
-  #   sql: {% condition parent_agency %}  {% endcondition %} ;;
-  # }
+  measure: churned {
+    type:  sum
+    sql: ${TABLE}.churned ;;
+
+  }
 
   set: detail {
     fields: [
+      account,
       month,
-      revenue,
-      retained,
-      new,
-      expansion,
-      resurrected,
-      contraction,
-      churned
+      parent_logo__c,
+      ge__c,
+      name,
+      type_of_customer__c,
+      churn_date__c_time,
+      resurrected_date__c_time,
+      parent_customertype,
+      account_revenue,
+      account_retained,
+      account_new,
+      account_expansion,
+      account_resurrected,
+      account_contraction,
+      account_churned
     ]
   }
 }
