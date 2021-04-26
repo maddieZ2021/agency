@@ -2,7 +2,6 @@ connection: "perpetua_db"
 
 # include all the views
 include: "/*.view"
-# include: "/views/*.view"
 
 datagroup: agency_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;

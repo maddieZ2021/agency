@@ -258,81 +258,87 @@ view: revenue_growth {
     sql: ${TABLE}.parent_customer_type = 'Agency' ;;
   }
 
-  measure: account_revenue {
+  dimension: account_revenue {
     type: number
     sql: ${TABLE}.revenue ;;
   }
 
   measure: revenue {
     type:  sum
-    sql: ${TABLE}.revenue ;;
+    sql: ${account_revenue};;
+    drill_fields: [detail*]
 
   }
 
-  measure: account_retained {
+  dimension: account_retained {
     type: number
     sql: ${TABLE}.retained ;;
-    drill_fields: [detail*]
   }
 
   measure: retained {
     type:  sum
-    sql: ${TABLE}.retained ;;
+    sql: ${account_retained} ;;
+    drill_fields: [detail*]
 
   }
 
-  measure: account_new {
+  dimension: account_new {
     type: number
     sql: ${TABLE}.new_ ;;
   }
 
   measure: new {
     type:  sum
-    sql: ${TABLE}.new_ ;;
+    sql: ${account_new} ;;
+    drill_fields: [detail*]
 
   }
 
-  measure: account_expansion {
+  dimension: account_expansion {
     type: number
     sql: ${TABLE}.expansion ;;
   }
 
   measure: expansion {
     type:  sum
-    sql: ${TABLE}.new_ ;;
+    sql: ${account_expansion} ;;
+    drill_fields: [detail*]
 
   }
 
-  measure: account_resurrected {
+  dimension: account_resurrected {
     type: number
     sql: ${TABLE}.resurrected ;;
   }
 
   measure: resurrected {
     type:  sum
-    sql: ${TABLE}.resurrected ;;
+    sql: ${account_resurrected} ;;
+    drill_fields: [detail*]
 
   }
 
-  measure: account_contraction {
+  dimension: account_contraction {
     type: number
     sql: ${TABLE}.contraction ;;
   }
 
   measure: contraction {
     type:  sum
-    sql: ${TABLE}.contraction ;;
+    sql: ${account_contraction} ;;
+    drill_fields: [detail*]
 
   }
 
-  measure: account_churned {
+  dimension: account_churned {
     type: number
     sql: ${TABLE}.churned ;;
   }
 
   measure: churned {
     type:  sum
-    sql: ${TABLE}.churned ;;
+    sql: ${account_churned} ;;
+    drill_fields: [detail*]
 
   }
 
