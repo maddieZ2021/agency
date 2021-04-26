@@ -212,8 +212,8 @@ view: SF_account_revenue {
     sql: ${TABLE}.account ;;
   }
   dimension: payment_date {
-    type: date
-    sql: sql: ${TABLE}.month ;;
+    type: string
+    sql: ${month} ;;
   }
 
   dimension: month {
