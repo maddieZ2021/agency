@@ -252,6 +252,11 @@ view: revenue_growth {
     sql: ${TABLE}.parent_customertype ;;
   }
 
+  dimension: parent_agency_identifier {
+    type: yesno
+    sql: ${TABLE}.parent_customertype = 'Agency' ;;
+  }
+
   measure: account_revenue {
     type: number
     sql: ${TABLE}.revenue ;;
