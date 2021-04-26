@@ -211,10 +211,13 @@ view: SF_account_revenue {
     type: string
     sql: ${TABLE}.account ;;
   }
-
-  dimension: month {
-    type: date
-    datatype: date
+  dimension: payment_date {
+    type: string
+    sql: sql: ${TABLE}.month ;;
+  }
+  dimension_group: month {
+    type: time
+    timeframes: [date, week, month]
     sql: ${TABLE}.month ;;
   }
 
@@ -345,7 +348,7 @@ view: SF_account_revenue {
   set: detail {
     fields: [
       account,
-      month,
+      payment_date,
       parent_accountid,
       company_stripe_id,
       name,
