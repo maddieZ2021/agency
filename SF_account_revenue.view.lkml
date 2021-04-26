@@ -215,9 +215,9 @@ view: SF_account_revenue {
     type: string
     sql: sql: ${TABLE}.month ;;
   }
-  dimension_group: month {
-    type: time
-    timeframes: [date, week, month]
+
+  dimension: month {
+    type: string
     sql: ${TABLE}.month ;;
   }
 
