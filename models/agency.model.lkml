@@ -2,12 +2,14 @@ connection: "perpetua_db"
 
 # include all the views
 include: "/*.view"
-# include: "/views/*.view"
+include: "/mrr_dts/*.view"
 
 datagroup: agency_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
   max_cache_age: "1 hour"
 }
+
+explore: base {}
 
 persist_with: agency_default_datagroup
 
