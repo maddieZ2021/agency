@@ -10,6 +10,7 @@ datagroup: agency_default_datagroup {
 
 persist_with: agency_default_datagroup
 
-explore: SF_account_revenue {
+explore: agency {
+  label: "SF_account_revenue"
 
 }
