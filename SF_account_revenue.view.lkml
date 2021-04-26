@@ -265,11 +265,13 @@ view: SF_account_revenue {
   dimension: account_revenue {
     type: number
     sql: ${TABLE}.revenue ;;
+    value_format: "$#.00;($#.00)"
   }
 
   measure: revenue {
     type:  sum
     sql: ${account_revenue};;
+    value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
 
   }
@@ -277,11 +279,13 @@ view: SF_account_revenue {
   dimension: account_retained {
     type: number
     sql: ${TABLE}.retained ;;
+    value_format: "$#.00;($#.00)"
   }
 
   measure: retained {
     type:  sum
     sql: ${account_retained} ;;
+    value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
 
   }
@@ -289,11 +293,13 @@ view: SF_account_revenue {
   dimension: account_new {
     type: number
     sql: ${TABLE}.new_ ;;
+    value_format: "$#.00;($#.00)"
   }
 
   measure: new {
     type:  sum
     sql: ${account_new} ;;
+    value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
 
   }
@@ -301,11 +307,13 @@ view: SF_account_revenue {
   dimension: account_expansion {
     type: number
     sql: ${TABLE}.expansion ;;
+    value_format: "$#.00;($#.00)"
   }
 
   measure: expansion {
     type:  sum
     sql: ${account_expansion} ;;
+    value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
 
   }
@@ -313,11 +321,13 @@ view: SF_account_revenue {
   dimension: account_resurrected {
     type: number
     sql: ${TABLE}.resurrected ;;
+    value_format: "$#.00;($#.00)"
   }
 
   measure: resurrected {
     type:  sum
     sql: ${account_resurrected} ;;
+    value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
 
   }
@@ -325,11 +335,13 @@ view: SF_account_revenue {
   dimension: account_contraction {
     type: number
     sql: ${TABLE}.contraction ;;
+    value_format: "$#.00;($#.00)"
   }
 
   measure: contraction {
     type:  sum
     sql: ${account_contraction} ;;
+    value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
 
   }
@@ -337,11 +349,13 @@ view: SF_account_revenue {
   dimension: account_churned {
     type: number
     sql: ${TABLE}.churned ;;
+    value_format: "$#.00;($#.00)"
   }
 
   measure: churned {
     type:  sum
     sql: ${account_churned} ;;
+    value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
 
   }
