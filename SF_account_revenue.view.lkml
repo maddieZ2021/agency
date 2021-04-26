@@ -217,7 +217,7 @@ view: SF_account_revenue {
   }
 
   dimension: month {
-    type: date
+    type: date_time
     sql: ${TABLE}.month ;;
   }
 
