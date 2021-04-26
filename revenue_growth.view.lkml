@@ -1,6 +1,7 @@
 view: revenue_growth {
   derived_table: {
-    sql: With abs as (
+    sql:
+    With abs as (
           select distinct * from
               (select
                 account__c,
@@ -126,13 +127,13 @@ view: revenue_growth {
             coalesce(tm.account_id, lm.account_id) as account,
           -- payment date for this month
             coalesce(tm.month, date_add(lm.month, interval 1 month)) as month,
-            tm.parent_logo__c,
-            tm.ge__c,
-            tm.name,
-            tm.type_of_customer__c,
-            tm.churn_date__c,
-            tm.resurrected_date__c,
-            tm.parent_customertype,
+            coalesce(tm.parent_logo__c, lm.parent_logo__c) as parent_accountid,
+            coalesce(tm.ge__c, lm.ge__c) as company_stripe_id,
+            coalesce(tm.name, lm.name) as name,
+            coalesce(tm.type_of_customer__c, lm.type_of_customer__c) as customer_type,
+            coalesce(tm.churn_date__c, lm.churn_date__c) as churn_date,
+            coalesce(tm.resurrected_date__c, lm.resurrected_date__c) as resurrected_date,
+            coalesce(tm.parent_customertype, lm.parent_customertype) as parent_customer_type,
 
           -- sum up this month's invoice as revenue
             tm.invoice as revenue,
@@ -217,14 +218,14 @@ view: revenue_growth {
     sql: ${TABLE}.month ;;
   }
 
-  dimension: parent_logo__c {
+  dimension: parent_accountid {
     type: string
-    sql: ${TABLE}.parent_logo__c ;;
+    sql: ${TABLE}.parent_accountid ;;
   }
 
-  dimension: ge__c {
+  dimension: company_stripe_id {
     type: string
-    sql: ${TABLE}.ge__c ;;
+    sql: ${TABLE}.company_stripe_id ;;
   }
 
   dimension: name {
@@ -232,29 +233,29 @@ view: revenue_growth {
     sql: ${TABLE}.name ;;
   }
 
-  dimension: type_of_customer__c {
+  dimension: customer_type {
     type: string
-    sql: ${TABLE}.type_of_customer__c ;;
+    sql: ${TABLE}.customer_type ;;
   }
 
-  dimension_group: churn_date__c {
-    type: time
-    sql: ${TABLE}.churn_date__c ;;
-  }
-
-  dimension_group: resurrected_date__c {
-    type: time
-    sql: ${TABLE}.resurrected_date__c ;;
-  }
-
-  dimension: parent_customertype {
+  dimension: churn_date {
     type: string
-    sql: ${TABLE}.parent_customertype ;;
+    sql: ${TABLE}.churn_date ;;
+  }
+
+  dimension: resurrected_date {
+    type: string
+    sql: ${TABLE}.resurrected_date ;;
+  }
+
+  dimension: parent_customer_type {
+    type: string
+    sql: ${TABLE}.parent_customer_type ;;
   }
 
   dimension: parent_agency_identifier {
     type: yesno
-    sql: ${TABLE}.parent_customertype = 'Agency' ;;
+    sql: ${TABLE}.parent_customer_type = 'Agency' ;;
   }
 
   measure: account_revenue {
@@ -339,13 +340,13 @@ view: revenue_growth {
     fields: [
       account,
       month,
-      parent_logo__c,
-      ge__c,
+      parent_accountid,
+      company_stripe_id,
       name,
-      type_of_customer__c,
-      churn_date__c_time,
-      resurrected_date__c_time,
-      parent_customertype,
+      customer_type,
+      churn_date,
+      resurrected_date,
+      parent_customer_type,
       account_revenue,
       account_retained,
       account_new,
