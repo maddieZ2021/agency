@@ -10,14 +10,6 @@ datagroup: agency_default_datagroup {
 
 persist_with: agency_default_datagroup
 
-explore: MRR {
-  from: mrr
-}
-
-explore: agency {
-  from: agency
-}
-
-explore: revenue_growth {
+explore: SF_account_revenue {
 
 }

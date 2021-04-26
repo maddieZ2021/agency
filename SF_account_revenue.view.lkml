@@ -1,4 +1,4 @@
-view: revenue_growth {
+view: SF_account_revenue {
   derived_table: {
     sql:
     With abs as (
