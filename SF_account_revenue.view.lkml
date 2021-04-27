@@ -268,6 +268,10 @@ view: SF_account_revenue {
     sql: ${account_revenue};;
     value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
+    link: {
+      label: "Explore Top Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_revenue+desc"
+    }
 
   }
 
@@ -282,6 +286,10 @@ view: SF_account_revenue {
     sql: ${account_retained} ;;
     value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
+    link: {
+      label: "Explore Top Retained Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_retained+desc"
+    }
 
   }
 
@@ -296,6 +304,10 @@ view: SF_account_revenue {
     sql: ${account_new} ;;
     value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
+    link: {
+      label: "Explore Top New Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_new+desc"
+    }
 
   }
 
@@ -310,6 +322,10 @@ view: SF_account_revenue {
     sql: ${account_expansion} ;;
     value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
+    link: {
+      label: "Explore Top Expansion by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_expansion+desc"
+    }
 
   }
 
@@ -324,7 +340,10 @@ view: SF_account_revenue {
     sql: ${account_resurrected} ;;
     value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
-
+    link: {
+      label: "Explore Top Resurrected Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_resurrected+desc"
+    }
   }
 
   dimension: account_contraction {
@@ -338,6 +357,10 @@ view: SF_account_revenue {
     sql: ${account_contraction} ;;
     value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
+    link: {
+      label: "Explore Worst Contraction by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_contraction+asc"
+    }
 
   }
 
@@ -352,6 +375,10 @@ view: SF_account_revenue {
     sql: ${account_churned} ;;
     value_format: "$#.00;($#.00)"
     drill_fields: [detail*]
+    link: {
+      label: "Explore Worst Churn by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_churned+asc"
+    }
 
   }
 
@@ -362,7 +389,12 @@ view: SF_account_revenue {
           ELSE NULL
           END ;;
     drill_fields: [detail*]
-    value_format: "-0"
+  }
+
+  measure: num_of_churned_negative {
+    type: number
+    sql: (-1)*${num_of_churned} ;;
+    drill_fields: [detail*]
   }
 
   measure: num_of_contracted {
