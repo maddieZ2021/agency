@@ -122,7 +122,7 @@ view: cohort {
       -- 5. aggregate to payment_month - first_payment_month granularity, trace the changing cohort_size by payment month
         agg_month_withsize as (
           Select
-              id,
+              user_id,
               payment_month,
               parent_logo__c,
               ge__c,
@@ -130,7 +130,7 @@ view: cohort {
               type_of_customer__c,
               parent_customertype,
               a2.cohort_size_fixed,
-              first_payment_month,
+              a1.first_payment_month,
               count(distinct a1.user_id) as cohort_size_changing,
               sum(a1.monthly_usd) as cohort_usd
           From agg_month_withfirst a1
