@@ -1,12 +1,6 @@
 view: cohort {
   derived_table: {
-    sql: -- Transaction data breakdown
-      -- account_id: id of the customer, 1158 customers in total
-      -- payment_id: id of the payment, one customer can make multiple payments
-      -- payment_usd: amount of each payment, note there are $0 payments, one customer can pay $0 for a certain month
-      -- payment_date: date of the payment, customer doesn't pay multiple times on the same day, one user - one paymentdate - one payment
-
-       With abs as (
+    sql: With abs as (
                 select distinct * from
                     (select
                       account__c,
@@ -148,7 +142,8 @@ view: cohort {
 
 
       Select * from agg_month_sincefirst
-       ;;
+       ;
+ ;;
   }
 
   measure: count {
@@ -156,10 +151,9 @@ view: cohort {
     drill_fields: [detail*]
   }
 
-  dimension: first_payment_month {
-    type: date
-    datatype: date
-    sql: ${TABLE}.first_payment_month ;;
+  dimension: SF_account_id {
+    type: string
+    sql: ${TABLE}.user_id ;;
   }
 
   dimension: payment_month {
@@ -168,9 +162,29 @@ view: cohort {
     sql: ${TABLE}.payment_month ;;
   }
 
-  dimension: months_since_first {
-    type: number
-    sql: ${TABLE}.months_since_first ;;
+  dimension: parent_SF_accountid {
+    type: string
+    sql: ${TABLE}.parent_logo__c ;;
+  }
+
+  dimension: company_stripe_id {
+    type: string
+    sql: ${TABLE}.ge__c ;;
+  }
+
+  dimension: name {
+    type: string
+    sql: ${TABLE}.name ;;
+  }
+
+  dimension: type_of_customer {
+    type: string
+    sql: ${TABLE}.type_of_customer__c ;;
+  }
+
+  dimension: parent_customertype {
+    type: string
+    sql: ${TABLE}.parent_customertype ;;
   }
 
   dimension: cohort_size_fixed {
@@ -178,11 +192,27 @@ view: cohort {
     sql: ${TABLE}.cohort_size_fixed ;;
   }
 
+  dimension: first_payment_month {
+    type: date
+    datatype: date
+    sql: ${TABLE}.first_payment_month ;;
+  }
+
+  dimension: months_since_first {
+    type: number
+    sql: ${TABLE}.months_since_first ;;
+  }
+
+
   dimension: cohort_size_changing {
     type: number
     sql: ${TABLE}.cohort_size_changing ;;
   }
 
+  measure: cohort_size {
+    type: sum
+    sql: ${cohort_size_changing} ;;
+  }
   dimension: account_revenue {
     type: number
     sql: ${TABLE}.revenue ;;
@@ -193,14 +223,20 @@ view: cohort {
     sql: ${account_revenue};;
   }
 
+
   set: detail {
     fields: [
-      first_payment_month,
+      SF_account_id,
       payment_month,
-      months_since_first,
+      parent_SF_accountid,
+      company_stripe_id,
+      name,
+      type_of_customer,
+      parent_customertype,
       cohort_size_fixed,
-      cohort_size_changing,
-      account_revenue
+      first_payment_month,
+      account_revenue,
+      months_since_first
     ]
   }
 }
