@@ -90,7 +90,7 @@ view: cohort {
                parent_customertype,
                sum(invoice) as monthly_usd
              From base
-             Group by user_id, payment_month),
+             Group by 1,2,3,4,5,6,7),
 
       -- 2. get first month of payment for each customer, granularity -> user_id
          first_month as (
