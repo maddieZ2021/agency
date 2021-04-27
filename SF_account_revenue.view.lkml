@@ -408,7 +408,9 @@ view: SF_account_revenue {
 
   measure: num_of_retained {
     type: count_distinct
-    sql:  CASE WHEN ${account_retained} != 0
+    # number of accounts retained is calculated differently than retained revenue
+    # if we don't specify contraction and expansion = 0, there will be overlaps
+    sql:  CASE WHEN ${account_retained} != 0 and (${account_contraction}=0 and ${account_expansion}=0)
           THEN ${account}
           ELSE NULL
           END ;;
