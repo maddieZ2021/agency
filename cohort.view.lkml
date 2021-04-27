@@ -209,6 +209,11 @@ view: cohort {
   measure: cohort_size {
     type: sum
     sql: ${cohort_size_changing} ;;
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top revenue by account for this cohort"
+      url: "{{ link }}&sorts=cohort.account_revenue+desc"
+    }
   }
   dimension: account_revenue {
     type: number
@@ -218,6 +223,11 @@ view: cohort {
   measure: cohort_revenue {
     type:sum
     sql: ${account_revenue};;
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top revenue by account for this cohort"
+      url: "{{ link }}&sorts=cohort.account_revenue+desc"
+    }
   }
 
 
