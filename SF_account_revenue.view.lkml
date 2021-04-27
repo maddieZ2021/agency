@@ -362,6 +362,7 @@ view: SF_account_revenue {
           ELSE NULL
           END ;;
     drill_fields: [detail*]
+    value_format: "-0"
   }
 
   measure: num_of_contracted {
