@@ -140,10 +140,7 @@ view: cohort {
             date_diff(payment_month, first_payment_month, month) as months_since_first
           From agg_month_withsize a)
 
-
-      Select * from agg_month_sincefirst
-       ;
- ;;
+      Select * from agg_month_sincefirst;;
   }
 
   measure: count {
