@@ -360,6 +360,61 @@ view: SF_account_revenue {
 
   }
 
+  measure: num_of_churned {
+    type: count_distinct
+    sql:  CASE WHEN ${account_churned} is not null
+          THEN ${account}
+          ELSE NULL
+          END ;;
+    drill_fields: [detail*]
+  }
+
+  measure: num_of_contracted {
+    type: count_distinct
+    sql:  CASE WHEN ${account_contraction} is not null
+          THEN ${account}
+          ELSE NULL
+          END ;;
+    drill_fields: [detail*]
+  }
+
+  measure: num_of_retained {
+    type: count_distinct
+    sql:  CASE WHEN ${account_retained} is not null
+          THEN ${account}
+          ELSE NULL
+          END ;;
+    drill_fields: [detail*]
+  }
+
+  measure: num_of_expanded {
+    type: count_distinct
+    sql:  CASE WHEN ${account_expansion} is not null
+          THEN ${account}
+          ELSE NULL
+          END ;;
+    drill_fields: [detail*]
+  }
+
+  measure: num_of_resurrected {
+    type: count_distinct
+    sql:  CASE WHEN ${account_resurrected} is not null
+          THEN ${account}
+          ELSE NULL
+          END ;;
+    drill_fields: [detail*]
+  }
+
+  measure: num_of_new {
+    type: count_distinct
+    sql:  CASE WHEN ${account_new} is not null
+          THEN ${account}
+          ELSE NULL
+          END ;;
+    drill_fields: [detail*]
+  }
+
+
   set: detail {
     fields: [
       account,
