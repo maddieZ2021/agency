@@ -138,23 +138,10 @@ view: cohort {
             cohort_size_changing,
             cohort_usd,
             date_diff(payment_month, first_payment_month, month) as months_since_first
-          From agg_month_withsize),
+          From agg_month_withsize)
 
-      -- 7. calculate cumulative payments, granularity -> payment_month + first_payment_month
-        cohort_sum as (
-          Select
-            first_payment_month,
-            payment_month,
-            months_since_first,
-            cohort_size_fixed,
-            cohort_size_changing,
-            round(cohort_usd, 2) as cohort_monthly_pay,
-            round(sum(cohort_usd) over (partition by first_payment_month
-                         order by payment_month), 2) as cumm_sum
-          From agg_month_sincefirst
-          order by 1,2,3,4,5,6)
 
-      Select * from cohort_sum
+      Select * from agg_month_sincefirst
        ;;
   }
 
@@ -195,9 +182,9 @@ view: cohort {
     sql: ${TABLE}.cohort_monthly_pay ;;
   }
 
-  dimension: cumm_sum {
-    type: number
-    sql: ${TABLE}.cumm_sum ;;
+  measure: cumm_sum {
+    type: running_total
+    sql: ${TABLE}.cohort_usd ;;
   }
 
   set: detail {
