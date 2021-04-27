@@ -362,7 +362,7 @@ view: SF_account_revenue {
 
   measure: num_of_churned {
     type: count_distinct
-    sql:  CASE WHEN ${account_churned} is not null
+    sql:  CASE WHEN ${account_churned} != 0
           THEN ${account}
           ELSE NULL
           END ;;
@@ -371,7 +371,7 @@ view: SF_account_revenue {
 
   measure: num_of_contracted {
     type: count_distinct
-    sql:  CASE WHEN ${account_contraction} is not null
+    sql:  CASE WHEN ${account_contraction} != 0
           THEN ${account}
           ELSE NULL
           END ;;
@@ -380,7 +380,7 @@ view: SF_account_revenue {
 
   measure: num_of_retained {
     type: count_distinct
-    sql:  CASE WHEN ${account_retained} is not null
+    sql:  CASE WHEN ${account_retained} != 0
           THEN ${account}
           ELSE NULL
           END ;;
@@ -389,7 +389,7 @@ view: SF_account_revenue {
 
   measure: num_of_expanded {
     type: count_distinct
-    sql:  CASE WHEN ${account_expansion} is not null
+    sql:  CASE WHEN ${account_expansion} != 0
           THEN ${account}
           ELSE NULL
           END ;;
@@ -398,7 +398,7 @@ view: SF_account_revenue {
 
   measure: num_of_resurrected {
     type: count_distinct
-    sql:  CASE WHEN ${account_resurrected} is not null
+    sql:  CASE WHEN ${account_resurrected} != 0
           THEN ${account}
           ELSE NULL
           END ;;
@@ -407,7 +407,7 @@ view: SF_account_revenue {
 
   measure: num_of_new {
     type: count_distinct
-    sql:  CASE WHEN ${account_new} is not null
+    sql:  CASE WHEN ${account_new} != 0
           THEN ${account}
           ELSE NULL
           END ;;
