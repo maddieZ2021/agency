@@ -83,6 +83,11 @@ view: cohort {
              Select
                account_id as user_id,
                date_trunc(dt, month) as payment_month,
+               parent_logo__c,
+               ge__c,
+               name,
+               type_of_customer__c,
+               parent_customertype,
                sum(invoice) as monthly_usd
              From base
              Group by user_id, payment_month),
@@ -98,9 +103,7 @@ view: cohort {
       -- 3. append first month of payment to agg_month, filter out $0 payments, granularity -> user_id
          agg_month_withfirst as (
              Select
-               a.user_id,
-               a.payment_month,
-               a.monthly_usd,
+               a.*,
                f.first_payment_month
              From agg_month a
              join first_month f
@@ -119,26 +122,29 @@ view: cohort {
       -- 5. aggregate to payment_month - first_payment_month granularity, trace the changing cohort_size by payment month
         agg_month_withsize as (
           Select
-              a1.first_payment_month,
-              a1.payment_month,
+              user.id,
+              payment_month,
+              parent_logo__c,
+              ge__c,
+              name,
+              type_of_customer__c,
+              parent_customertype,
               a2.cohort_size_fixed,
+              first_payment_month,
               count(distinct a1.user_id) as cohort_size_changing,
               sum(a1.monthly_usd) as cohort_usd
           From agg_month_withfirst a1
           join agg_month_cohortsize a2
           on a1.first_payment_month = a2.first_payment_month
-            Group by a1.first_payment_month, a1.payment_month, a2.cohort_size_fixed),
+            Group by1,2,3,4,5,6,7,8,9),
 
       -- 6. get months since first payment month, append to each cohort group, granularity -> payment_month + first_payment_month
         agg_month_sincefirst as (
           Select
-            first_payment_month,
-            payment_month,
-            cohort_size_fixed,
-            cohort_size_changing,
-            cohort_usd,
+            a.* except(cohort_usd),
+            round(cohort_usd, 2) as revenue,
             date_diff(payment_month, first_payment_month, month) as months_since_first
-          From agg_month_withsize)
+          From agg_month_withsize a)
 
 
       Select * from agg_month_sincefirst
@@ -177,14 +183,14 @@ view: cohort {
     sql: ${TABLE}.cohort_size_changing ;;
   }
 
-  dimension: cohort_monthly_pay {
+  dimension: account_revenue {
     type: number
-    sql: ${TABLE}.cohort_monthly_pay ;;
+    sql: ${TABLE}.revenue ;;
   }
 
-  measure: cumm_sum {
+  measure: cohort_revenue {
     type:sum
-    sql: ${TABLE}.cohort_usd ;;
+    sql: ${account_revenue};;
   }
 
   set: detail {
@@ -194,8 +200,7 @@ view: cohort {
       months_since_first,
       cohort_size_fixed,
       cohort_size_changing,
-      cohort_monthly_pay,
-      cumm_sum
+      account_revenue
     ]
   }
 }
