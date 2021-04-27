@@ -202,11 +202,6 @@ view: SF_account_revenue {
  ;;
   }
 
-  measure: count {
-    type: count
-    drill_fields: [detail*]
-  }
-
   dimension: account {
     type: string
     sql: ${TABLE}.account ;;
@@ -414,6 +409,14 @@ view: SF_account_revenue {
     drill_fields: [detail*]
   }
 
+  measure: count {
+    type: count_distinct
+    sql: CASE WHEN ${account_revenue} > 0
+          THEN ${account}
+          ELSE NULL
+          END ;;
+    drill_fields: [detail*]
+  }
 
   set: detail {
     fields: [
