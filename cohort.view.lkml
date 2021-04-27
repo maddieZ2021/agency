@@ -183,7 +183,7 @@ view: cohort {
   }
 
   measure: cumm_sum {
-    type: running_total
+    type:sum
     sql: ${TABLE}.cohort_usd ;;
   }
 
