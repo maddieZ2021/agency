@@ -136,13 +136,13 @@ view: cohort {
           From agg_month_withfirst a1
           join agg_month_cohortsize a2
           on a1.first_payment_month = a2.first_payment_month
-            Group by1,2,3,4,5,6,7,8,9),
+            Group by 1,2,3,4,5,6,7,8,9),
 
       -- 6. get months since first payment month, append to each cohort group, granularity -> payment_month + first_payment_month
         agg_month_sincefirst as (
           Select
             a.* except(cohort_usd),
-            round(cohort_usd, 2) as revenue,
+            round(cohort_usd, 0) as revenue,
             date_diff(payment_month, first_payment_month, month) as months_since_first
           From agg_month_withsize a)
 
