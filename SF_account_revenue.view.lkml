@@ -2,6 +2,7 @@ view: SF_account_revenue {
   derived_table: {
     sql:
     With abs as (
+    -- deduplicate Stripe - SF invoice info
           select distinct * from
               (select
                 account__c,
@@ -10,7 +11,7 @@ view: SF_account_revenue {
                 name as payment_name, -- same as billing id, unique
                 amount__c AS invoice,
                 refund_reason__c,
-                DATE(date2__c) AS stripe_created_invoice_date,  -- is it?
+                DATE(date2__c) AS stripe_created_invoice_date,
                 description__c,
                 notes__c,
                 isdsp__c,
@@ -27,7 +28,7 @@ view: SF_account_revenue {
                )
               where rank = 1),
 
-    -- deduplicated SF account info
+    -- deduplicate SF account info
           dedup as
            (select distinct
              id,
@@ -66,36 +67,28 @@ view: SF_account_revenue {
               dedup.resurrected_date__c,
               dd.type_of_customer__c as parent_customertype
            from abs
-          left join dedup
-          on abs.account__c= dedup.id
-          left join dedup as dd
-          on abs.parent_logo__c = dd.id
+           left join dedup
+           on abs.account__c= dedup.id
+           left join dedup as dd
+           on abs.parent_logo__c = dd.id
           ),
 
-    -- aggregate to week and month
-          week_aggregated as (
-              select
-                  date_trunc(dt, week) as week,
-                  account_id,
-                  sum(invoice) as week_invoice
-              from base
-              group by 1,2
-          ),
-
-    -- some accountids have multiple invoices, but some invoices are missing parent account info (i.e. account_id = '0011U00001L7AAUQA3' for march)
+    -- some invoices under same account are missing parent account info (i.e. account_id = '0011U00001L7AAUQA3' for march)
+    -- so we are filling in missing data
         account_info as (
            select distinct
-                 account_id,
+                  account_id,
                   parent_logo__c,
                   ge__c,
                   name,
                   type_of_customer__c,
                   churn_date__c,
-                   resurrected_date__c,
-                   parent_customertype,
+                  resurrected_date__c,
+                  parent_customertype,
             from base where parent_logo__c is not null),
 
-          month_aggregated as (
+      -- aggregate to month-account level
+        month_aggregated as (
               select
                   date_trunc(b.dt, month) as month,
                   b.account_id,
@@ -120,7 +113,6 @@ view: SF_account_revenue {
               select
                   account_id,
                   min(dt) as first_dt,
-                  date_trunc(min(dt), week) as first_week,
                   date_trunc(min(dt), month) as first_month
               from base
               group by 1
@@ -131,45 +123,44 @@ view: SF_account_revenue {
               select
                   m.*,
                   f.first_month
-              from month_aggregated m join first_dt f
+              from month_aggregated m
+              join first_dt f
               using (account_id)
           ),
 
      -- calculate revenue growth
-     -- has to be at month-account-ge__c granularity, we lost all the individual billing, invoice info here
+     -- has to be at month-account granularity, we lost all the individual billing, invoice info here
           revenue_growth as (
-           select
-            coalesce(tm.account_id, lm.account_id) as account,
-          -- payment date for this month
-            coalesce(tm.month, date_add(lm.month, interval 1 month)) as month,
-            coalesce(tm.parent_logo__c, lm.parent_logo__c) as parent_accountid,
-            coalesce(tm.ge__c, lm.ge__c) as company_stripe_id,
-            coalesce(tm.name, lm.name) as name,
-            coalesce(tm.type_of_customer__c, lm.type_of_customer__c) as customer_type,
-            coalesce(tm.churn_date__c, lm.churn_date__c) as churn_date,
-            coalesce(tm.resurrected_date__c, lm.resurrected_date__c) as resurrected_date,
-            coalesce(tm.parent_customertype, lm.parent_customertype) as parent_customer_type,
+            select
+                coalesce(tm.account_id, lm.account_id) as account,
+                coalesce(tm.month, date_add(lm.month, interval 1 month)) as month,
+                coalesce(tm.parent_logo__c, lm.parent_logo__c) as parent_accountid,
+                coalesce(tm.ge__c, lm.ge__c) as company_stripe_id,
+                coalesce(tm.name, lm.name) as name,
+                coalesce(tm.type_of_customer__c, lm.type_of_customer__c) as customer_type,
+                coalesce(tm.churn_date__c, lm.churn_date__c) as churn_date,
+                coalesce(tm.resurrected_date__c, lm.resurrected_date__c) as resurrected_date,
+                coalesce(tm.parent_customertype, lm.parent_customertype) as parent_customer_type,
 
-          -- sum up this month's invoice as revenue
-            sum(tm.invoice) as revenue,
-
-          -- retained revenue from last month
-                -- if this month received more, use last month as retained (retained and gained some)
+              -- sum up this month's invoice as revenue
+                sum(tm.invoice) as revenue,
+              -- retained revenue from last month
+              -- if this month received more, use last month as retained (retained and gained some)
                  sum(case when tm.account_id is not NULL and lm.account_id is not NULL and tm.invoice >= lm.invoice
                  then lm.invoice
-                 -- if this month received less, use this month as retained (retained but lost some)
+              -- if this month received less, use this month as retained (retained but lost some)
                  when tm.account_id is not NULL and lm.account_id is not NULL and tm.invoice < lm.invoice
                  then tm.invoice
                  else 0 end)
                  as retained,
 
-          -- new revenue from newly onboarded clients
-               -- if first payment month is this month, then new revenue
+              -- new revenue from newly onboarded clients
+              -- if first payment month is this month, then new revenue
                 sum(case when tm.first_month = tm.month then tm.invoice
                 else 0 end)
                 as new_,
 
-          -- existing clients spent more for this month
+              -- existing clients spent more for this month
                 sum(case when tm.month != tm.first_month
                     and tm.account_id is not NULL and lm.account_id is not NULL
                     and tm.invoice > lm.invoice
@@ -177,51 +168,74 @@ view: SF_account_revenue {
                 else 0 end)
                 as expansion,
 
-          -- churned clients came back for this month
+              -- churned clients came back this month
                 sum(case when tm.account_id is not NULL
-                -- last month did not pay
+              -- last month did not pay
                     and (lm.account_id is NULL or lm.invoice = 0)
-                -- this month paid and it's not the first time paying
+              -- this month paid and it's not the first time paying
                     and tm.invoice > 0 and tm.first_month != tm.month
                     then tm.invoice
                 else 0 end)
                 as resurrected,
 
-          -- existing clients spent less for this month
-            -1 *
-                sum(case when tm.month != tm.first_month
+              -- existing clients spent less for this month
+             -1 * sum(case when tm.month != tm.first_month
                      and tm.account_id is not NULL and lm.account_id is not NULL
                      and tm.invoice < lm.invoice and tm.invoice > 0
                      then lm.invoice - tm.invoice
                 else 0 end) as contraction,
 
           -- churned clients
-            -1 * sum(
-                case when lm.invoice > 0 and (tm.account_id is NULL or tm.invoice = 0)
-                then lm.invoice else 0 end
-            ) as churned
+             -1 * sum( case when lm.invoice > 0 and (tm.account_id is NULL or tm.invoice = 0)
+                       then lm.invoice
+                       else 0 end) as churned
 
-        from
-        -- this month
-            month_aggregated_append tm
-            full outer join
-        -- last month
-            month_aggregated_append lm
-            on (tm.account_id = lm.account_id
-                and date_add(lm.month, interval 1 month) = tm.month
-            )
-      group by 1,2,3,4,5,6,7,8,9
-       order by 1,2
-          )
+            from
+            -- this month
+                month_aggregated_append tm
+                full outer join
+            -- last month
+                month_aggregated_append lm
+                on (tm.account_id = lm.account_id
+                    and date_add(lm.month, interval 1 month) = tm.month
+                )
+            group by 1,2,3,4,5,6,7,8,9
+            order by 1,2),
 
-          select * from revenue_growth
- ;;
+     -- take most recent month's revenue (not current month) to classify accounts by revenue tiers
+          revenue_tier as (
+             select
+                 account,
+                 case when revenue <= 500 then 'Growth: <= 500'
+                 when revenue > 500 and revenue <= 1500 then 'Pro: 500~1500'
+                 when revenue > 1500 and revenue <= 4000 then 'Pro+: 1500~4000 '
+                 when revenue > 4000 then 'Enterprise: > 4000'
+                 else null end as revenue_tier
+             from (select *
+                   from
+                      (select
+                         account, revenue, month,
+                         row_number() over (partition by account order by month desc) as most_recent
+                       from revenue_growth
+                       where revenue is not null
+                       and revenue != 0) a
+                   where a.most_recent = 1) b),
+
+          final as (
+              select * from
+              revenue_growth
+              left join
+              revenue_tier
+              using (account))
+
+      select * from final ;;
   }
 
   dimension: account {
     type: string
     sql: ${TABLE}.account ;;
   }
+
   dimension: payment_date {
     type: string
     sql: ${month} ;;
@@ -288,7 +302,6 @@ view: SF_account_revenue {
       label: "Explore Top Revenue by account"
       url: "{{ link }}&sorts=SF_account_revenue.account_revenue+desc"
     }
-
   }
 
   dimension: account_retained {
@@ -306,7 +319,6 @@ view: SF_account_revenue {
       label: "Explore Top Retained Revenue by account"
       url: "{{ link }}&sorts=SF_account_revenue.account_retained+desc"
     }
-
   }
 
   dimension: account_new {
@@ -324,7 +336,6 @@ view: SF_account_revenue {
       label: "Explore Top New Revenue by account"
       url: "{{ link }}&sorts=SF_account_revenue.account_new+desc"
     }
-
   }
 
   dimension: account_expansion {
@@ -342,7 +353,6 @@ view: SF_account_revenue {
       label: "Explore Top Expansion by account"
       url: "{{ link }}&sorts=SF_account_revenue.account_expansion+desc"
     }
-
   }
 
   dimension: account_resurrected {
@@ -377,7 +387,6 @@ view: SF_account_revenue {
       label: "Explore Worst Contraction by account"
       url: "{{ link }}&sorts=SF_account_revenue.account_contraction+asc"
     }
-
   }
 
   dimension: account_churned {
@@ -395,7 +404,6 @@ view: SF_account_revenue {
       label: "Explore Worst Churn by account"
       url: "{{ link }}&sorts=SF_account_revenue.account_churned+asc"
     }
-
   }
 
   measure: num_of_churned {
@@ -469,7 +477,10 @@ view: SF_account_revenue {
     drill_fields: [detail*]
   }
 
-
+  dimension: revenue_tier {
+    type: string
+    sql: ${TABLE}.revenue_tier ;;
+  }
 
   set: detail {
     fields: [
@@ -482,6 +493,7 @@ view: SF_account_revenue {
       churn_date,
       resurrected_date,
       parent_customer_type,
+      revenue_tier,
       account_revenue,
       account_retained,
       account_new,
