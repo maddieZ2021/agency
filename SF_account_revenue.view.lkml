@@ -290,31 +290,31 @@ view: SF_account_revenue {
 # for drill-in to work
   dimension: has_revenue {
     type: yesno
-    sql: ${account_revenue} > 0 ;;
+    sql: ${account_revenue} != 0 ;;
   }
   dimension: has_retained {
     type: yesno
-    sql: ${account_retained} > 0 ;;
+    sql: ${account_retained} != 0 ;;
   }
   dimension: has_new {
     type: yesno
-    sql: ${account_new} > 0 ;;
+    sql: ${account_new} != 0 ;;
   }
   dimension: has_expansion {
     type: yesno
-    sql: ${account_expansion} > 0 ;;
+    sql: ${account_expansion} != 0 ;;
   }
   dimension: has_resurrected {
     type: yesno
-    sql: ${account_resurrected} > 0 ;;
+    sql: ${account_resurrected} != 0 ;;
   }
   dimension: has_contraction {
     type: yesno
-    sql: ${account_contraction} > 0 ;;
+    sql: ${account_contraction} != 0 ;;
   }
   dimension: has_churned {
     type: yesno
-    sql: ${account_churned} > 0 ;;
+    sql: ${account_churned} != 0 ;;
   }
 
 
@@ -466,11 +466,13 @@ view: SF_account_revenue {
     }
     drill_fields: [detail*]
   }
+
   measure: num_of_churned_negative {
     type: number
     sql: (-1)*${num_of_churned} ;;
     drill_fields: [detail*]
   }
+
   measure: num_of_contracted {
     type: count_distinct
     sql:  CASE WHEN ${account_contraction} != 0
