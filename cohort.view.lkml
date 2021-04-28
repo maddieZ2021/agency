@@ -84,7 +84,7 @@ view: cohort {
                parent_customertype,
                sum(invoice) as monthly_usd
              From base
-             where {% condition parent_customer_type %} agg_month.parent_customertype {% endcondition %}
+             where {% condition parent_customer_type %} base.parent_customertype {% endcondition %}
              Group by 1,2,3,4,5,6,7),
 
       -- 2. get first month of payment for each customer, granularity -> user_id
