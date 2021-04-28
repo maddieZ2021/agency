@@ -109,7 +109,7 @@ view: SF_account_revenue {
                   sum(invoice) as invoice
               from base b
               left join account_info a
-              using account_id
+              using (account_id)
               group by 1,2,3,4,5,6,7,8,9
               having invoice > 0 -- for edge cases id '0011U00000Ouun4QAB' who was charged and refunded on 2019-8-15, so its monthly fee cancelled out
           ),
