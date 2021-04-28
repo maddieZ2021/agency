@@ -135,52 +135,52 @@ view: SF_account_revenue {
             coalesce(tm.parent_customertype, lm.parent_customertype) as parent_customer_type,
 
           -- sum up this month's invoice as revenue
-            tm.invoice as revenue,
+            sum(tm.invoice) as revenue,
 
           -- retained revenue from last month
                 -- if this month received more, use last month as retained (retained and gained some)
-                 case when tm.account_id is not NULL and lm.account_id is not NULL and tm.invoice >= lm.invoice
+                 sum(case when tm.account_id is not NULL and lm.account_id is not NULL and tm.invoice >= lm.invoice
                  then lm.invoice
                  -- if this month received less, use this month as retained (retained but lost some)
                  when tm.account_id is not NULL and lm.account_id is not NULL and tm.invoice < lm.invoice
                  then tm.invoice
-                 else 0 end
+                 else 0 end)
                  as retained,
 
           -- new revenue from newly onboarded clients
                -- if first payment month is this month, then new revenue
-                case when tm.first_month = tm.month then tm.invoice
-                else 0 end
+                sum(case when tm.first_month = tm.month then tm.invoice
+                else 0 end)
                 as new_,
 
           -- existing clients spent more for this month
-                case when tm.month != tm.first_month
+                sum(case when tm.month != tm.first_month
                     and tm.account_id is not NULL and lm.account_id is not NULL
                     and tm.invoice > lm.invoice
                     and lm.invoice > 0 then tm.invoice - lm.invoice
-                else 0 end
+                else 0 end)
                 as expansion,
 
           -- churned clients came back for this month
-                case when tm.account_id is not NULL
+                sum(case when tm.account_id is not NULL
                 -- last month did not pay
                     and (lm.account_id is NULL or lm.invoice = 0)
                 -- this month paid and it's not the first time paying
                     and tm.invoice > 0 and tm.first_month != tm.month
                     then tm.invoice
-                else 0 end
+                else 0 end)
                 as resurrected,
 
           -- existing clients spent less for this month
             -1 *
-                (case when tm.month != tm.first_month
+                sum(case when tm.month != tm.first_month
                      and tm.account_id is not NULL and lm.account_id is not NULL
                      and tm.invoice < lm.invoice and tm.invoice > 0
                      then lm.invoice - tm.invoice
                 else 0 end) as contraction,
 
           -- churned clients
-            -1 * (
+            -1 * sum(
                 case when lm.invoice > 0 and (tm.account_id is NULL or tm.invoice = 0)
                 then lm.invoice else 0 end
             ) as churned
@@ -194,6 +194,7 @@ view: SF_account_revenue {
             on (tm.account_id = lm.account_id
                 and date_add(lm.month, interval 1 month) = tm.month
             )
+      group by 1,2,3,4,5,6,7,8,9
        order by 1,2
           )
 
