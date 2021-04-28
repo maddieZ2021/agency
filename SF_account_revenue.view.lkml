@@ -93,7 +93,7 @@ view: SF_account_revenue {
                   churn_date__c,
                    resurrected_date__c,
                    parent_customertype,
-            from base),
+            from base where parent_logo__c is not null),
 
           month_aggregated as (
               select
