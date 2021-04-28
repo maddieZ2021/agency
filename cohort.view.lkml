@@ -180,10 +180,6 @@ view: cohort {
     sql: ${TABLE}.type_of_customer__c ;;
   }
 
-  dimension: parent_customertype {
-    type: string
-    sql: ${TABLE}.parent_customertype ;;
-  }
 
   dimension: cohort_size_fixed {
     type: number
@@ -233,8 +229,13 @@ view: cohort {
 
   filter: parent_customertype_filter {
     type: string
-    }
+    sql: {% condition parent_customertype_filter %} ${parent_customertype} {% endcondition %} ;;
+  }
 
+  dimension: parent_customertype {
+    type: string
+    sql: ${TABLE}.parent_customertype ;;
+  }
 
   set: detail {
     fields: [
