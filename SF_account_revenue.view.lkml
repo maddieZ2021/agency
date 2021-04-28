@@ -82,10 +82,10 @@ view: SF_account_revenue {
               group by 1,2
           ),
 
-          month_aggregated as (
-              select
-                  date_trunc(dt, month) as month,
-                  account_id,
+    -- some accountids have multiple invoices, but some invoices are missing parent account info (i.e. account_id = '0011U00001L7AAUQA3' for march)
+        account_info as (
+           select distinct
+                 account_id,
                   parent_logo__c,
                   ge__c,
                   name,
@@ -93,11 +93,27 @@ view: SF_account_revenue {
                   churn_date__c,
                    resurrected_date__c,
                    parent_customertype,
+            from base),
+
+          month_aggregated as (
+              select
+                  date_trunc(b.dt, month) as month,
+                  b.account_id,
+                  COALESCE(b.parent_logo__c, a.parent_logo__c),
+                  COALESCE(b.ge__c, a.ge__c),
+                  COALESCE(b.name, a.name),
+                  COALESCE(b.type_of_customer__c, a.type_of_customer__c),
+                  COALESCE(b.churn_date__c, a.churn_date__c),
+                  COALESCE(b.resurrected_date__c, a.resurrected_date__c),
+                  COALESCE(b.parent_customertype, a.parent_customertype),
                   sum(invoice) as invoice
-              from base
+              from base b
+              left join account_info a
+              using account_id
               group by 1,2,3,4,5,6,7,8,9
               having invoice > 0 -- for edge cases id '0011U00000Ouun4QAB' who was charged and refunded on 2019-8-15, so its monthly fee cancelled out
           ),
+
 
      -- Take first payment date, defines our cohorts
           first_dt as (
