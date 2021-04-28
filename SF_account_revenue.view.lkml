@@ -99,13 +99,13 @@ view: SF_account_revenue {
               select
                   date_trunc(b.dt, month) as month,
                   b.account_id,
-                  COALESCE(b.parent_logo__c, a.parent_logo__c),
-                  COALESCE(b.ge__c, a.ge__c),
-                  COALESCE(b.name, a.name),
-                  COALESCE(b.type_of_customer__c, a.type_of_customer__c),
-                  COALESCE(b.churn_date__c, a.churn_date__c),
-                  COALESCE(b.resurrected_date__c, a.resurrected_date__c),
-                  COALESCE(b.parent_customertype, a.parent_customertype),
+                  COALESCE(b.parent_logo__c, a.parent_logo__c) as parent_logo__c,
+                  COALESCE(b.ge__c, a.ge__c) as ge__c,
+                  COALESCE(b.name, a.name) as name,
+                  COALESCE(b.type_of_customer__c, a.type_of_customer__c) as type_of_customer__c,
+                  COALESCE(b.churn_date__c, a.churn_date__c) as churn_date__c,
+                  COALESCE(b.resurrected_date__c, a.resurrected_date__c) as resurrected_date__c,
+                  COALESCE(b.parent_customertype, a.parent_customertype) as parent_customertype,
                   sum(invoice) as invoice
               from base b
               left join account_info a
