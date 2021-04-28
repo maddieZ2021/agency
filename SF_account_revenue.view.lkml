@@ -70,8 +70,6 @@ view: SF_account_revenue {
           on abs.account__c= dedup.id
           left join dedup as dd
           on abs.parent_logo__c = dd.id
-          where {% condition parent_customertype_filter %} dedup.parent_customertype {% endcondition %}
-          --where dd.type_of_customer__c = 'Agency'
           ),
 
     -- aggregate to week and month
@@ -454,9 +452,6 @@ view: SF_account_revenue {
     drill_fields: [detail*]
   }
 
-  filter: parent_customertype_filter {
-    type: string
-  }
 
 
   set: detail {
