@@ -316,6 +316,11 @@ view: SF_account_revenue {
     type: yesno
     sql: ${account_churned} != 0 ;;
   }
+  dimension: has_remained {
+    type: yesno
+    sql: ${account_retained} != 0 and ${account_expansion} = 0 and ${account_contraction} = 0  ;;
+  }
+
 
 
 # account level dimensions from derived table
@@ -470,6 +475,10 @@ view: SF_account_revenue {
   measure: num_of_churned_negative {
     type: number
     sql: (-1)*${num_of_churned} ;;
+    link: {
+      label: "Explore worst churn accounts: Unfortunately the drill-in for churn currently shows all records "
+      url: "{{ link }}&sorts=SF_account_revenue.account_churned+asc"
+    }
     drill_fields: [detail*]
   }
 
