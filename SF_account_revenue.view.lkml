@@ -287,149 +287,202 @@ view: SF_account_revenue {
     sql: ${TABLE}.parent_customer_type = 'Agency' ;;
   }
 
+# for drill-in to work
+  dimension: has_revenue {
+    type: yesno
+    sql: ${account_revenue} > 0 ;;
+  }
+  dimension: has_retained {
+    type: yesno
+    sql: ${account_retained} > 0 ;;
+  }
+  dimension: has_new {
+    type: yesno
+    sql: ${account_new} > 0 ;;
+  }
+  dimension: has_expansion {
+    type: yesno
+    sql: ${account_expansion} > 0 ;;
+  }
+  dimension: has_resurrected {
+    type: yesno
+    sql: ${account_resurrected} > 0 ;;
+  }
+  dimension: has_contraction {
+    type: yesno
+    sql: ${account_contraction} > 0 ;;
+  }
+  dimension: has_churned {
+    type: yesno
+    sql: ${account_churned} > 0 ;;
+  }
+
+
+# account level dimensions from derived table
   dimension: account_revenue {
     type: number
     sql: ${TABLE}.revenue ;;
     value_format: "$#.00;($#.00)"
   }
-
-  measure: revenue {
-    type:  sum
-    sql: ${account_revenue};;
-    value_format: "$#.00;($#.00)"
-    drill_fields: [detail*]
-    link: {
-      label: "Explore Top Revenue by account"
-      url: "{{ link }}&sorts=SF_account_revenue.account_revenue+desc"
-    }
-  }
-
   dimension: account_retained {
     type: number
     sql: ${TABLE}.retained ;;
     value_format: "$#.00;($#.00)"
   }
-
-  measure: retained {
-    type:  sum
-    sql: ${account_retained} ;;
-    value_format: "$#.00;($#.00)"
-    drill_fields: [detail*]
-    link: {
-      label: "Explore Top Retained Revenue by account"
-      url: "{{ link }}&sorts=SF_account_revenue.account_retained+desc"
-    }
-  }
-
   dimension: account_new {
     type: number
     sql: ${TABLE}.new_ ;;
     value_format: "$#.00;($#.00)"
   }
-
-  measure: new {
-    type:  sum
-    sql: ${account_new} ;;
-    value_format: "$#.00;($#.00)"
-    drill_fields: [detail*]
-    link: {
-      label: "Explore Top New Revenue by account"
-      url: "{{ link }}&sorts=SF_account_revenue.account_new+desc"
-    }
-  }
-
   dimension: account_expansion {
     type: number
     sql: ${TABLE}.expansion ;;
     value_format: "$#.00;($#.00)"
   }
-
-  measure: expansion {
-    type:  sum
-    sql: ${account_expansion} ;;
-    value_format: "$#.00;($#.00)"
-    drill_fields: [detail*]
-    link: {
-      label: "Explore Top Expansion by account"
-      url: "{{ link }}&sorts=SF_account_revenue.account_expansion+desc"
-    }
-  }
-
   dimension: account_resurrected {
     type: number
     sql: ${TABLE}.resurrected ;;
     value_format: "$#.00;($#.00)"
   }
-
-  measure: resurrected {
-    type:  sum
-    sql: ${account_resurrected} ;;
-    value_format: "$#.00;($#.00)"
-    drill_fields: [detail*]
-    link: {
-      label: "Explore Top Resurrected Revenue by account"
-      url: "{{ link }}&sorts=SF_account_revenue.account_resurrected+desc"
-    }
-  }
-
   dimension: account_contraction {
     type: number
     sql: ${TABLE}.contraction ;;
     value_format: "$#.00;($#.00)"
   }
-
-  measure: contraction {
-    type:  sum
-    sql: ${account_contraction} ;;
-    value_format: "$#.00;($#.00)"
-    drill_fields: [detail*]
-    link: {
-      label: "Explore Worst Contraction by account"
-      url: "{{ link }}&sorts=SF_account_revenue.account_contraction+asc"
-    }
-  }
-
   dimension: account_churned {
     type: number
     sql: ${TABLE}.churned ;;
     value_format: "$#.00;($#.00)"
   }
 
+# aggregated measures
+  measure: revenue {
+    type:  sum
+    sql: ${account_revenue};;
+    value_format: "$#.00;($#.00)"
+    filters: {
+      field: has_revenue
+      value: "yes"
+    }
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_revenue+desc"
+    }
+  }
+  measure: retained {
+    type:  sum
+    sql: ${account_retained} ;;
+    value_format: "$#.00;($#.00)"
+    filters: {
+      field: has_retained
+      value: "yes"
+    }
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top Retained Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_retained+desc"
+    }
+  }
+  measure: new {
+    type:  sum
+    sql: ${account_new} ;;
+    value_format: "$#.00;($#.00)"
+    filters: {
+      field: has_new
+      value: "yes"
+    }
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top New Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_new+desc"
+    }
+  }
+  measure: expansion {
+    type:  sum
+    sql: ${account_expansion} ;;
+    value_format: "$#.00;($#.00)"
+    filters: {
+      field: has_expansion
+      value: "yes"
+    }
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top Expansion by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_expansion+desc"
+    }
+  }
+  measure: resurrected {
+    type:  sum
+    sql: ${account_resurrected} ;;
+    value_format: "$#.00;($#.00)"
+    filters: {
+      field: has_resurrected
+      value: "yes"
+    }
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top Resurrected Revenue by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_resurrected+desc"
+    }
+  }
+  measure: contraction {
+    type:  sum
+    sql: ${account_contraction} ;;
+    value_format: "$#.00;($#.00)"
+    filters: {
+      field: has_contraction
+      value: "yes"
+    }
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Worst Contraction by account"
+      url: "{{ link }}&sorts=SF_account_revenue.account_contraction+asc"
+    }
+  }
   measure: churned {
     type:  sum
     sql: ${account_churned} ;;
     value_format: "$#.00;($#.00)"
+    filters: {
+      field: has_churned
+      value: "yes"
+    }
     drill_fields: [detail*]
     link: {
       label: "Explore Worst Churn by account"
       url: "{{ link }}&sorts=SF_account_revenue.account_churned+asc"
     }
   }
-
   measure: num_of_churned {
     type: count_distinct
     sql:  CASE WHEN ${account_churned} != 0
           THEN ${account}
           ELSE NULL
           END ;;
+    filters: {
+      field: has_churned
+      value: "yes"
+    }
     drill_fields: [detail*]
   }
-
   measure: num_of_churned_negative {
     type: number
     sql: (-1)*${num_of_churned} ;;
     drill_fields: [detail*]
   }
-
   measure: num_of_contracted {
     type: count_distinct
     sql:  CASE WHEN ${account_contraction} != 0
           THEN ${account}
           ELSE NULL
           END ;;
+    filters: {
+      field: has_contraction
+      value: "yes"
+    }
     drill_fields: [detail*]
   }
-
   measure: num_of_retained {
     type: count_distinct
     # number of accounts retained is calculated differently than retained revenue
@@ -438,42 +491,58 @@ view: SF_account_revenue {
           THEN ${account}
           ELSE NULL
           END ;;
+    filters: {
+      field: has_retained
+      value: "yes"
+    }
     drill_fields: [detail*]
   }
-
   measure: num_of_expanded {
     type: count_distinct
     sql:  CASE WHEN ${account_expansion} != 0
           THEN ${account}
           ELSE NULL
           END ;;
+    filters: {
+      field: has_expansion
+      value: "yes"
+    }
     drill_fields: [detail*]
   }
-
   measure: num_of_resurrected {
     type: count_distinct
     sql:  CASE WHEN ${account_resurrected} != 0
           THEN ${account}
           ELSE NULL
           END ;;
+    filters: {
+      field: has_resurrected
+      value: "yes"
+    }
     drill_fields: [detail*]
   }
-
   measure: num_of_new {
     type: count_distinct
     sql:  CASE WHEN ${account_new} != 0
           THEN ${account}
           ELSE NULL
           END ;;
+    filters: {
+      field: has_new
+      value: "yes"
+    }
     drill_fields: [detail*]
   }
-
   measure: count {
     type: count_distinct
     sql: CASE WHEN ${account_revenue} > 0
           THEN ${account}
           ELSE NULL
           END ;;
+    filters: {
+      field: has_revenue
+      value: "yes"
+    }
     drill_fields: [detail*]
   }
 
