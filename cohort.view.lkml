@@ -268,7 +268,7 @@ view: cohort {
 #add
   measure: remained_percent {
     type: number
-    sql: ${cohort_size}/${cohort_size_fixed};;
+    sql: ${cohort_size}/${cohort_size_changing};;
     drill_fields: [detail*]
     value_format: "0.0%"
   }
