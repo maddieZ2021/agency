@@ -250,9 +250,15 @@ view: cohort {
     sql: ${TABLE}.revenue ;;
   }
 
+  measure: sum_cohort_revenue {
+    type:  sum
+    sql: ${account_revenue};;
+    drill_fields: [detail*]
+  }
+
   measure: cummu_cohort_revenue {
     type:  running_total
-    sql: ${account_revenue};;
+    sql: ${sum_cohort_revenue};;
     drill_fields: [detail*]
   }
 
