@@ -112,8 +112,7 @@ view: cohort {
         agg_month_temp
         left join
         revenue_tier
-        using (user_id))
-        where {% condition revenue_tier %} revenue_tier.revenue_tier {% endcondition %},
+        using (user_id)),
 
 -- 2. get first month of payment for each customer, granularity -> user_id
      first_month as (
@@ -131,7 +130,8 @@ view: cohort {
          From agg_month a
          join first_month f
          on a.user_id = f.user_id
-         Where a.monthly_usd != 0),
+         Where a.monthly_usd != 0
+         and {% condition revenue_tier %} revenue_tier.revenue_tier {% endcondition %}),
 
 -- 4. calculate initial cohort size, group customers by their first_payment_month
       agg_month_cohortsize as (
