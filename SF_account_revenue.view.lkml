@@ -562,6 +562,71 @@ view: SF_account_revenue {
     sql: ${TABLE}.revenue_tier ;;
   }
 
+# ratios
+  measure: Gross_retention {
+    label_from_parameter: metric_selector
+    type: number
+    sql:${SF_account_revenue.retained}/offset(${SF_account_revenue.revenue}, 1);;
+    value_format: "0.0%"
+  }
+  measure: Growth_rate {
+    label_from_parameter: metric_selector
+    type: number
+    sql:${SF_account_revenue.new}/offset(${SF_account_revenue.revenue}, 1) + ${SF_account_revenue.resurrected}/offset(${SF_account_revenue.revenue}, 1) + ${SF_account_revenue.expansion}/offset(${SF_account_revenue.revenue}, 1) - abs(${SF_account_revenue.contraction})/offset(${SF_account_revenue.revenue}, 1) - abs(${SF_account_revenue.churned})/offset(${SF_account_revenue.revenue}, 1);;
+    value_format: "0.0%"
+  }
+  measure: Net_churn {
+    label_from_parameter: metric_selector
+    type: number
+    sql:(abs(${SF_account_revenue.churned})+abs(${SF_account_revenue.contraction}) - ${SF_account_revenue.resurrected}-${SF_account_revenue.expansion})/offset(${SF_account_revenue.revenue},1);;
+    value_format: "0.0%"
+  }
+  measure: Net_dollar_retention {
+    label_from_parameter: metric_selector
+    type: number
+    sql: (offset(${SF_account_revenue.revenue},1)+${SF_account_revenue.expansion} - abs(${SF_account_revenue.churned})-abs(${SF_account_revenue.contraction}))/offset(${SF_account_revenue.revenue},1) ;;
+    value_format: "0.0%"
+  }
+  measure: Quick_ratio {
+    label_from_parameter: metric_selector
+    type: number
+    sql: (${SF_account_revenue.new}+${SF_account_revenue.resurrected}+${SF_account_revenue.expansion})/(abs(${SF_account_revenue.churned}+${SF_account_revenue.contraction})) ;;
+    value_format: "0.0%"
+  }
+  measure: Quick_ratio_lite {
+    label_from_parameter: metric_selector
+    type: number
+    sql: (${SF_account_revenue.new} + ${SF_account_revenue.resurrected})/abs(${SF_account_revenue.churned}) ;;
+    value_format: "0.0%"
+  }
+  parameter: metric_selector {
+    type: string
+    allowed_value: {
+      label: "Gross Retention rate"
+      value: "Gross_retention"
+    }
+    allowed_value: {
+      label: "Growth rate"
+      value: "Growth_rate"
+    }
+    allowed_value: {
+      label: "Net churn rate"
+      value: "Net_churn"
+    }
+    allowed_value: {
+      label: "Net dollar retention rate"
+      value: "Net_dollar_retention"
+    }
+    allowed_value: {
+      label: "Quick ratio"
+      value: "Quick_ratio"
+    }
+    allowed_value: {
+      label: "Quick ratio lite"
+      value: "Quick_ratio_lite"
+    }
+  }
+
   set: detail {
     fields: [
       account,

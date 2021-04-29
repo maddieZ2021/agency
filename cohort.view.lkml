@@ -259,7 +259,6 @@ view: cohort {
     sql: ${TABLE}.revenue_tier ;;
   }
 
-
 # for retained percent
   measure: cohort_size {
     type: sum
@@ -288,7 +287,6 @@ view: cohort {
     sql: ${cumm_revenue}/${cohort_fixed} ;;
     drill_fields: [detail*]
     value_format: "$0"
-
   }
 
   set: detail {
