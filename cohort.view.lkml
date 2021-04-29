@@ -250,8 +250,8 @@ view: cohort {
     sql: ${TABLE}.revenue ;;
   }
 
-  measure: cummu_cohort_revenue {
-    type:running_total
+  measure: cohort_revenue {
+    type:  running_total
     sql: ${account_revenue};;
     drill_fields: [detail*]
   }
@@ -269,16 +269,6 @@ view: cohort {
     value_format: "0.0%"
   }
 
-  measure: LTV {
-    type: number
-    sql: ${cummu_cohort_revenue}/${cohort_size_fixed};;
-    value_format: "$0"
-    link: {
-      label: "Explore Top revenue by account for this cohort"
-      url: "{{ link }}&sorts=cohort.account_revenue+desc"
-    }
-    drill_fields: [detail*]
-  }
   set: detail {
     fields: [
       SF_account_id,
