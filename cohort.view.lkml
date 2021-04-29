@@ -266,6 +266,11 @@ view: cohort {
   }
 
 #add
+  measure: cohort_fixed {
+    type: average
+    sql: ${TABLE}.cohort_size_fixed ;;
+  }
+
   measure: remained_percent {
     type: number
     sql: ${cohort_size}/${cohort_size_changing};;
@@ -275,7 +280,7 @@ view: cohort {
 
   measure: LTV {
     type: number
-    sql: ${cumm_revenue}/${cohort_size_fixed} ;;
+    sql: ${cumm_revenue}/${cohort_fixed} ;;
     drill_fields: [detail*]
     value_format: "$0"
 
