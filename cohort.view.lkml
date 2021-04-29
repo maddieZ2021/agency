@@ -244,19 +244,16 @@ view: cohort {
       url: "{{ link }}&sorts=cohort.account_revenue+desc"
     }
   }
+
   dimension: account_revenue {
     type: number
     sql: ${TABLE}.revenue ;;
   }
 
-  measure: cohort_revenue {
-    type:sum
+  measure: cummu_cohort_revenue {
+    type:running_total
     sql: ${account_revenue};;
     drill_fields: [detail*]
-    link: {
-      label: "Explore Top revenue by account for this cohort"
-      url: "{{ link }}&sorts=cohort.account_revenue+desc"
-    }
   }
 
   dimension: parent_customertype {
@@ -264,6 +261,22 @@ view: cohort {
     sql: ${TABLE}.parent_customertype ;;
   }
 
+#add
+  measure: remained_percent {
+    type: number
+    sql: ${cohort_size}/${cohort_size_fixed};;
+    drill_fields: [detail*]
+  }
+
+  measure: LTV {
+    type: number
+    sql: ${cummu_cohort_revenue}/${cohort_size_fixed};;
+    link: {
+      label: "Explore Top revenue by account for this cohort"
+      url: "{{ link }}&sorts=cohort.account_revenue+desc"
+    }
+    drill_fields: [detail*]
+  }
   set: detail {
     fields: [
       SF_account_id,
