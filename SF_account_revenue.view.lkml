@@ -476,7 +476,7 @@ view: SF_account_revenue {
     type: number
     sql: (-1)*${num_of_churned} ;;
     link: {
-      label: "Explore worst churn accounts: Unfortunately the drill-in for churn currently shows all records "
+      label: "Unfortunately the drill-in for churn currently shows all records "
       url: "{{ link }}&sorts=SF_account_revenue.account_churned+asc"
     }
     drill_fields: [detail*]
