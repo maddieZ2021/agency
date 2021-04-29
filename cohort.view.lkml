@@ -237,16 +237,6 @@ view: cohort {
     sql: ${TABLE}.cohort_size_changing ;;
   }
 
-  measure: cohort_size {
-    type: sum
-    sql: ${cohort_size_changing} ;;
-    drill_fields: [detail*]
-    link: {
-      label: "Explore Top revenue by account for this cohort"
-      url: "{{ link }}&sorts=cohort.account_revenue+desc"
-    }
-  }
-
   dimension: account_revenue {
     type: number
     sql: ${TABLE}.revenue ;;
@@ -266,16 +256,27 @@ view: cohort {
   }
 
 #add
+# for retained percent
+  measure: cohort_size {
+    type: sum
+    sql: ${cohort_size_changing} ;;
+    drill_fields: [detail*]
+    link: {
+      label: "Explore Top revenue by account for this cohort"
+      url: "{{ link }}&sorts=cohort.account_revenue+desc"
+    }
+  }
+  measure: remained_percent {
+    type: number
+    sql: ${cohort_size}/${cohort_size_fixed};;
+    drill_fields: [detail*]
+    value_format: "0.0%"
+  }
+
+# for LTV
   measure: cohort_fixed {
     type: average
     sql: ${TABLE}.cohort_size_fixed ;;
-  }
-
-  measure: remained_percent {
-    type: number
-    sql: ${cohort_size}/${cohort_size_changing};;
-    drill_fields: [detail*]
-    value_format: "0.0%"
   }
 
   measure: LTV {
