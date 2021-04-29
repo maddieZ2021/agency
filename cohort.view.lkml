@@ -250,17 +250,14 @@ view: cohort {
     sql: ${TABLE}.revenue ;;
   }
 
-  measure: sum_cohort_revenue {
-    type:  sum
-    sql: ${account_revenue};;
+  measure: cummu_cohort_revenue {
+    type:  number
+    sql: sum(${account_revenue}) over (partition by ${first_payment_month}
+                   order by ${payment_month});;
+    value_format: "$0"
     drill_fields: [detail*]
   }
 
-  measure: cummu_cohort_revenue {
-    type:  running_total
-    sql: ${sum_cohort_revenue};;
-    drill_fields: [detail*]
-  }
 
   dimension: parent_customertype {
     type: string
