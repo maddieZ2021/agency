@@ -266,11 +266,13 @@ view: cohort {
     type: number
     sql: ${cohort_size}/${cohort_size_fixed};;
     drill_fields: [detail*]
+    value_format: "0.0%"
   }
 
   measure: LTV {
     type: number
     sql: ${cummu_cohort_revenue}/${cohort_size_fixed};;
+    value_format: "$0"
     link: {
       label: "Explore Top revenue by account for this cohort"
       url: "{{ link }}&sorts=cohort.account_revenue+desc"
