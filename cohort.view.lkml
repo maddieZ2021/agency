@@ -112,7 +112,8 @@ view: cohort {
         agg_month_temp
         left join
         revenue_tier
-        using (user_id)),
+        using (user_id))
+        where {% condition revenue_tier %} revenue_tier.revenue_tier {% endcondition %},
 
 -- 2. get first month of payment for each customer, granularity -> user_id
      first_month as (
@@ -248,7 +249,6 @@ view: cohort {
     drill_fields: [detail*]
     value_format: "$0"
   }
-
 
   dimension: parent_customertype {
     type: string
