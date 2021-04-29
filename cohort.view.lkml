@@ -89,7 +89,7 @@ view: cohort {
        Group by 1,2,3,4,5,6,7),
 
 -- take most recent month's revenue (not current month) to classify accounts by revenue tiers
-    revenue_tier as (
+    tier as (
        select
            user_id,
            case when monthly_usd <= 500 then 'Growth: <= 500'
@@ -111,7 +111,7 @@ view: cohort {
         select * from
         agg_month_temp
         left join
-        revenue_tier
+        tier
         using (user_id)),
 
 -- 2. get first month of payment for each customer, granularity -> user_id
@@ -131,7 +131,7 @@ view: cohort {
          join first_month f
          on a.user_id = f.user_id
          Where a.monthly_usd != 0
-         and {% condition revenue_tier %} revenue_tier.revenue_tier {% endcondition %}),
+         and {% condition revenue_tier %} revenue_tier {% endcondition %}),
 
 -- 4. calculate initial cohort size, group customers by their first_payment_month
       agg_month_cohortsize as (
@@ -228,10 +228,6 @@ view: cohort {
     sql: ${TABLE}.months_since_first ;;
   }
 
-  dimension: revenue_tier {
-    type: string
-    sql: ${TABLE}.revenue_tier ;;
-  }
 
   dimension: cohort_size_changing {
     type: number
@@ -250,12 +246,20 @@ view: cohort {
     value_format: "$0"
   }
 
+
+#add
+# for filter
   dimension: parent_customertype {
     type: string
     sql: ${TABLE}.parent_customertype ;;
   }
 
-#add
+  dimension: revenue_tier {
+    type: string
+    sql: ${TABLE}.revenue_tier ;;
+  }
+
+
 # for retained percent
   measure: cohort_size {
     type: sum
