@@ -574,16 +574,17 @@ view: SF_account_revenue {
 
   set: detail {
     fields: [
-      account,
       payment_date,
+      parent_customer_type,
+      parent_name,
       parent_accountid,
+      customer_type,
+      revenue_tier,
+      account,
       company_stripe_id,
       name,
-      customer_type,
       churn_date,
       resurrected_date,
-      parent_customer_type,
-      revenue_tier,
       account_revenue,
       account_retained,
       account_new,

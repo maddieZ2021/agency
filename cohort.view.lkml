@@ -298,18 +298,19 @@ view: cohort {
 
   set: detail {
     fields: [
-      SF_account_id,
       payment_month,
+      parent_customertype,
       parent_SF_accountid,
+      parent_name,
+      SF_account_id,
+      revenue_tier,
       company_stripe_id,
       name,
       type_of_customer,
-      parent_customertype,
       cohort_size_fixed,
       first_payment_month,
       account_revenue,
-      months_since_first,
-      revenue_tier
+      months_since_first
     ]
   }
 }
