@@ -64,7 +64,8 @@ view: cohort {
             dedup.type_of_customer__c,
             dedup.churn_date__c,
             dedup.resurrected_date__c,
-            dd.type_of_customer__c as parent_customertype
+            dd.type_of_customer__c as parent_customertype,
+            dd.name as parent_name
          from abs
         left join dedup
         on abs.account__c= dedup.id
@@ -83,6 +84,7 @@ view: cohort {
          name,
          type_of_customer__c,
          parent_customertype,
+         parent_name,
          sum(invoice) as monthly_usd
        From base
        where {% condition parent_customertype %} base.parent_customertype {% endcondition %}
@@ -153,6 +155,7 @@ view: cohort {
             type_of_customer__c,
             parent_customertype,
             revenue_tier,
+            parent_name,
             a2.cohort_size_fixed,
             a1.first_payment_month,
             count(distinct a1.user_id) as cohort_size_changing,
@@ -246,6 +249,10 @@ view: cohort {
     value_format: "$0"
   }
 
+  dimension: parent_name {
+    type: string
+    sql: ${TABLE}.parent_name ;;
+  }
 
 #add
 # for filter

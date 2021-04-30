@@ -65,7 +65,8 @@ view: SF_account_revenue {
               dedup.type_of_customer__c,
               dedup.churn_date__c,
               dedup.resurrected_date__c,
-              dd.type_of_customer__c as parent_customertype
+              dd.type_of_customer__c as parent_customertype,
+              dd.name as parent_name
            from abs
            left join dedup
            on abs.account__c= dedup.id
@@ -85,6 +86,7 @@ view: SF_account_revenue {
                   churn_date__c,
                   resurrected_date__c,
                   parent_customertype,
+                  parent_name
             from base where parent_logo__c is not null),
 
       -- aggregate to month-account level
@@ -99,6 +101,7 @@ view: SF_account_revenue {
                   COALESCE(b.churn_date__c, a.churn_date__c) as churn_date__c,
                   COALESCE(b.resurrected_date__c, a.resurrected_date__c) as resurrected_date__c,
                   COALESCE(b.parent_customertype, a.parent_customertype) as parent_customertype,
+                  COALESCE(b.parent_name, a.parent_name) as parent_name,
                   sum(invoice) as invoice
               from base b
               left join account_info a
@@ -141,6 +144,7 @@ view: SF_account_revenue {
                 coalesce(tm.churn_date__c, lm.churn_date__c) as churn_date,
                 coalesce(tm.resurrected_date__c, lm.resurrected_date__c) as resurrected_date,
                 coalesce(tm.parent_customertype, lm.parent_customertype) as parent_customer_type,
+                coalesce(tm.parent_name, lm.parent_name) as parent_name,
 
               -- sum up this month's invoice as revenue
                 sum(tm.invoice) as revenue,
@@ -286,6 +290,12 @@ view: SF_account_revenue {
     type: yesno
     sql: ${TABLE}.parent_customer_type = 'Agency' ;;
   }
+
+  dimension: parent_name {
+    type: string
+    sql: ${TABLE}.parent_name ;;
+  }
+
 
 # for drill-in to work
   dimension: has_revenue {
