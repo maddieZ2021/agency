@@ -242,8 +242,8 @@ view: cohort {
     sql: ${TABLE}.revenue ;;
   }
 
-  measure: cumm_revenue {
-    type: running_total
+  measure: sum_revenue {
+    type: sum
     sql: ${TABLE}.cumm_sum ;;
     drill_fields: [detail*]
     value_format: "$0"
@@ -291,7 +291,7 @@ view: cohort {
 
   measure: LTV {
     type: number
-    sql: ${cumm_revenue}/${cohort_fixed} ;;
+    sql: ${sum_revenue}/${cohort_fixed} ;;
     drill_fields: [detail*]
     value_format: "$0"
   }
