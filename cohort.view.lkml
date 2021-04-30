@@ -170,7 +170,7 @@ view: cohort {
           Select
             a.* except(cohort_usd),
             round(cohort_usd, 0) as revenue,
-            sum(cohort_usd) over (partition by user_id, first_payment_month
+            sum(cohort_usd) over (partition by first_payment_month
                                   order by payment_month) as cumm_sum,
             date_diff(payment_month, first_payment_month, month) as months_since_first
           From agg_month_withsize a)
@@ -244,7 +244,7 @@ view: cohort {
 
   measure: sum_revenue {
     type: sum
-    sql: ${TABLE}.revenue ;;
+    sql: ${TABLE}.cumm_sum ;;
     drill_fields: [detail*]
     value_format: "$0"
   }
