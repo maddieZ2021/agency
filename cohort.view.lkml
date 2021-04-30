@@ -243,7 +243,7 @@ view: cohort {
   }
 
   measure: cumm_revenue {
-    type: sum
+    type: running_total
     sql: ${TABLE}.cumm_sum ;;
     drill_fields: [detail*]
     value_format: "$0"
