@@ -106,7 +106,7 @@ view: SF_account_revenue {
               from base b
               left join account_info a
               using (account_id)
-              group by 1,2,3,4,5,6,7,8,9
+              group by 1,2,3,4,5,6,7,8,9,10
               having invoice > 0 -- for edge cases id '0011U00000Ouun4QAB' who was charged and refunded on 2019-8-15, so its monthly fee cancelled out
           ),
 
@@ -203,7 +203,7 @@ view: SF_account_revenue {
                 on (tm.account_id = lm.account_id
                     and date_add(lm.month, interval 1 month) = tm.month
                 )
-            group by 1,2,3,4,5,6,7,8,9
+            group by 1,2,3,4,5,6,7,8,9,10
             order by 1,2),
 
      -- take most recent month's revenue (not current month) to classify accounts by revenue tiers

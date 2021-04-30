@@ -88,7 +88,7 @@ view: cohort {
          sum(invoice) as monthly_usd
        From base
        where {% condition parent_customertype %} base.parent_customertype {% endcondition %}
-       Group by 1,2,3,4,5,6,7),
+       Group by 1,2,3,4,5,6,7,8),
 
 -- take most recent month's revenue (not current month) to classify accounts by revenue tiers
     tier as (
@@ -163,7 +163,7 @@ view: cohort {
         From agg_month_withfirst a1
         join agg_month_cohortsize a2
         on a1.first_payment_month = a2.first_payment_month
-          Group by 1,2,3,4,5,6,7,8,9,10),
+          Group by 1,2,3,4,5,6,7,8,9,10,11),
 
 -- 6. get months since first payment month, append to each cohort group, granularity -> payment_month + first_payment_month
         agg_month_sincefirst as (
