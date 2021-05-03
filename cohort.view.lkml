@@ -102,7 +102,7 @@ view: cohort {
        From base b
        left join account_info a
        using (account_id)
-       where {% condition parent_customertype %} base.parent_customertype {% endcondition %}
+       where {% condition parent_customertype %} b.parent_customertype {% endcondition %}
        Group by 1,2,3,4,5,6,7,8),
 
 -- take most recent month's revenue to classify accounts by revenue tiers
