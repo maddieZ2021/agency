@@ -14,7 +14,6 @@ view: SF_account_revenue {
                 DATE(date2__c) AS stripe_created_invoice_date,
                 description__c,
                 notes__c,
-                isdsp__c,
                 parent_logo__c,
                 rank() over (partition by  account__c, bill.id order by bill.lastmodifieddate desc) as rank
                 FROM `pogon-155405.salesforce_to_bigquery.Payments__c` bill
@@ -58,7 +57,6 @@ view: SF_account_revenue {
               description__c,
               refund_reason__c,
               notes__c,
-              isdsp__c,
               parent_logo__c,
               dedup.ge__c,
               dedup.name,

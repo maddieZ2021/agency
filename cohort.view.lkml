@@ -13,7 +13,6 @@ view: cohort {
             DATE(date2__c) AS stripe_created_invoice_date,
             description__c,
             notes__c,
-            isdsp__c,
             parent_logo__c,
             rank() over (partition by  account__c, bill.id order by bill.lastmodifieddate desc) as rank
             FROM `pogon-155405.salesforce_to_bigquery.Payments__c` bill
@@ -57,7 +56,6 @@ view: cohort {
             description__c,
             refund_reason__c,
             notes__c,
-            isdsp__c,
             parent_logo__c,
             dedup.ge__c,
             dedup.name,
@@ -74,23 +72,40 @@ view: cohort {
         --where dd.type_of_customer__c = 'Agency'
         ),
 
+  -- some invoices under same account are missing parent account info (i.e. account_id = '0011U00001L7AAUQA3' for march)
+  -- so we are filling in missing data
+      account_info as (
+         select distinct
+                account_id,
+                parent_logo__c,
+                ge__c,
+                name,
+                type_of_customer__c,
+                churn_date__c,
+                resurrected_date__c,
+                parent_customertype,
+                parent_name
+          from base where parent_logo__c is not null),
+
 -- 1. aggregate payment by month for each customer, granularity -> user_id
    agg_month_temp as (
        Select
          account_id as user_id,
          date_trunc(dt, month) as payment_month,
-         parent_logo__c,
-         ge__c,
-         name,
-         type_of_customer__c,
-         parent_customertype,
-         parent_name,
+         COALESCE(b.parent_logo__c, a.parent_logo__c) as parent_logo__c,
+         COALESCE(b.ge__c, a.ge__c) as ge__c,
+         COALESCE(b.name, a.name) as name,
+         COALESCE(b.type_of_customer__c, a.type_of_customer__c) as type_of_customer__c,
+         COALESCE(b.parent_customertype, a.parent_customertype) as parent_customertype,
+         COALESCE(b.parent_name, a.parent_name) as parent_name,
          sum(invoice) as monthly_usd
-       From base
+       From base b
+       left join account_info a
+       using (account_id)
        where {% condition parent_customertype %} base.parent_customertype {% endcondition %}
        Group by 1,2,3,4,5,6,7,8),
 
--- take most recent month's revenue (not current month) to classify accounts by revenue tiers
+-- take most recent month's revenue to classify accounts by revenue tiers
     tier as (
        select
            user_id,
@@ -110,8 +125,8 @@ view: cohort {
              where a.most_recent = 1) b),
 
      agg_month as (
-        select * from
-        agg_month_temp
+        select *
+        from agg_month_temp
         left join
         tier
         using (user_id)),
@@ -158,12 +173,12 @@ view: cohort {
             parent_name,
             a2.cohort_size_fixed,
             a1.first_payment_month,
-            count(distinct a1.user_id) as cohort_size_changing,
+            count(distinct a1.user_id) as cohort_size_changing, -- will return 1 for each record, we will sum them up later in defining lookml measures
             sum(a1.monthly_usd) as cohort_usd
         From agg_month_withfirst a1
         join agg_month_cohortsize a2
         on a1.first_payment_month = a2.first_payment_month
-          Group by 1,2,3,4,5,6,7,8,9,10,11),
+        Group by 1,2,3,4,5,6,7,8,9,10,11),
 
 -- 6. get months since first payment month, append to each cohort group, granularity -> payment_month + first_payment_month
         agg_month_sincefirst as (
@@ -231,7 +246,6 @@ view: cohort {
     sql: ${TABLE}.months_since_first ;;
   }
 
-
   dimension: cohort_size_changing {
     type: number
     sql: ${TABLE}.cohort_size_changing ;;
@@ -243,7 +257,7 @@ view: cohort {
   }
 
   measure: sum_revenue {
-    type: average
+    type: average # cuz the cumm_sum from agg_month_sincefirst repeated for all accounts who shared the same first_pay_date and actual pay_date
     sql: ${TABLE}.cumm_sum ;;
     drill_fields: [detail*]
     value_format: "$0"
@@ -269,7 +283,7 @@ view: cohort {
 # for retained percent
   measure: cohort_size {
     type: sum
-    sql: ${cohort_size_changing} ;;
+    sql: ${cohort_size_changing} ;; # sum up all the 1s
     drill_fields: [detail*]
     link: {
       label: "Explore Top revenue by account for this cohort"
