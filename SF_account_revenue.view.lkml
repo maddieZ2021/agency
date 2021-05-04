@@ -210,7 +210,7 @@ view: SF_account_revenue {
                  account,
                  case when revenue <= 500 then 'Growth: <= 500'
                  when revenue > 500 and revenue <= 1500 then 'Pro: 500~1500'
-                 when revenue > 1500 and revenue <= 4000 then 'Pro+: 1500~4000 '
+                 when revenue > 1500 and revenue <= 4000 then 'Pro+: 1500~4000'
                  when revenue > 4000 then 'Enterprise: > 4000'
                  else null end as revenue_tier
              from (select *

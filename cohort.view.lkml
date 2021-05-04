@@ -111,7 +111,7 @@ view: cohort {
            user_id,
            case when monthly_usd <= 500 then 'Growth: <= 500'
            when monthly_usd > 500 and monthly_usd <= 1500 then 'Pro: 500~1500'
-           when monthly_usd > 1500 and monthly_usd <= 4000 then 'Pro+: 1500~4000 '
+           when monthly_usd > 1500 and monthly_usd <= 4000 then 'Pro+: 1500~4000'
            when monthly_usd > 4000 then 'Enterprise: > 4000'
            else null end as revenue_tier
        from (select *
