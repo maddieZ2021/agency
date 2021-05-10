@@ -181,7 +181,7 @@ view: cohort {
                                   order by payment_month RANGE UNBOUNDED PRECEDING) as cumm_sum,
             date_diff(payment_month, first_payment_month, month) as months_since_first
           From agg_month_withsize a
-          where payment_month <= date_trunc(current_date(), month))
+          where payment_month < date_trunc(current_date(), month)) -- for heatmap we only look at past months, or else incomplete billing cycle (current month) will skew the color coding
 
       Select * from agg_month_sincefirst;;
   }
