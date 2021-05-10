@@ -15,6 +15,7 @@ view: cohort {
               description__c,
               notes__c,
               parent_logo__c,
+              isdeleted,
               row_number() over (partition by  account__c, bill.id order by bill.lastmodifieddate desc) as rank -- use row_number, donot use rank()
               FROM `pogon-155405.salesforce_to_bigquery.Payments__c` bill
              -- where isdeleted is not TRUE
@@ -26,7 +27,7 @@ view: cohort {
              and account__c not in ( '0011U00001ekFIFQA2', -- for resurrected edge case: ge__c = '6048'
                                      '0011U00001AnixWQAR', -- for perpetua test $1 per month
                                      '0011U00001gKy44QAC') -- for edge case: accountid no longer exist
-             and payment_name != '18975' -- for edge case: 2021-01-31 18975 and 18997 redundant
+             and isdeleted is not true  -- for edge case: 2021-01-31 18975 and 18997 redundant
              and (((parent_logo__c is null and description__c like '%Media Fee%') and  -- count amazon media fee
                   (parent_logo__c is null and description__c not like 'Target-Media Cost'))  -- count target media fee
                   or parent_logo__c is not null) -- all managed adspend + platform fee
