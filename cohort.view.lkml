@@ -1,48 +1,55 @@
 view: cohort {
   derived_table: {
     sql:
- With abs as
-      (select distinct * from
-          (select
-            account__c,
-            bill.id as billing_id,  -- unique for each invoice,
-            invoiceid__c as invoice_id, -- unique for each invoice, but may be null
-            name as payment_name, -- same as billing id, unique
-            amount__c AS invoice,
-            refund_reason__c,
-            DATE(date2__c) AS stripe_created_invoice_date,
-            description__c,
-            notes__c,
-            parent_logo__c,
-            rank() over (partition by  account__c, bill.id order by bill.lastmodifieddate desc) as rank
-            FROM `pogon-155405.salesforce_to_bigquery.Payments__c` bill
-           where isdeleted is False
-           and amount__c != 0
-           and amount__c is not null
-           and account__c != '0011U00001ekFIFQA2' -- for resurrected edge case: ge__c = '6048'
-           and (((parent_logo__c is null and description__c like '%Media Fee%') and
-                (parent_logo__c is null and description__c not like 'Target-Media Cost'))
-                or parent_logo__c is not null)
-           )
-          where rank = 1),
+  With abs as (
+  -- deduplicate Stripe - SF invoice info
+        select distinct * from
+            (select
+              account__c,
+              bill.id as billing_id,  -- unique for each invoice, same as 18 digit payment ID in SF
+              invoiceid__c as invoice_id, -- unique for each invoice, but may be null
+              name as payment_name, -- same as billing id, unique
+              amount__c AS invoice,
+              refund_reason__c,
+              DATE(date2__c) AS stripe_created_invoice_date,
+              description__c,
+              notes__c,
+              parent_logo__c,
+              row_number() over (partition by  account__c, bill.id order by bill.lastmodifieddate desc) as rank -- use row_number, donot use rank()
+              FROM `pogon-155405.salesforce_to_bigquery.Payments__c` bill
+             -- where isdeleted is not TRUE
+            ) b
+             where rank = 1
+             and parent_logo__c is not null -- to eliminate bill.id a0l1U000006leVDQAY
+             and invoice != 0
+             and invoice is not null
+             and account__c not in ( '0011U00001ekFIFQA2', -- for resurrected edge case: ge__c = '6048'
+                                     '0011U00001AnixWQAR', -- for perpetua test $1 per month
+                                     '0011U00001gKy44QAC') -- for edge case: accountid no longer exist
+             and (((parent_logo__c is null and description__c like '%Media Fee%') and  -- count amazon media fee
+                  (parent_logo__c is null and description__c not like 'Target-Media Cost'))  -- count target media fee
+                  or parent_logo__c is not null) -- all managed adspend + platform fee
+             ),
 
--- deduplicated SF account info
-      dedup as
-       (select distinct
-           id,
-           ge__c, -- company stripe ID
-           name,
-           type_of_customer__c,
-           churn_date__c,
-           resurrected_date__c
-        from
-           (select *
+    -- deduplicate SF account info
+        dedup as
+           (select distinct
+             id,
+             ge__c, -- company stripe ID, may be null
+             name,
+             type_of_customer__c,
+             churn_date__c,
+             resurrected_date__c
             from
-                 (SELECT *, row_number() over (partition by id order by lastmodifieddate desc) as row_number
-                 FROM `pogon-155405.salesforce_to_bigquery.Account` ) b
-            where b.row_number = 1
-            and id != '0011U00001ekFIFQA2' -- for resurrected edge case: ge__c = '6048'
-            )),
+               (select *
+                from
+                     (SELECT *, row_number() over (partition by id order by lastmodifieddate desc) as row_number
+                     FROM `pogon-155405.salesforce_to_bigquery.Account` ) b
+                where b.row_number = 1
+                and id not in ('0011U00001ekFIFQA2', -- for resurrected edge case: ge__c = '6048'
+                               '0011U00001AnixWQAR', -- for perpetua test $1 per month
+                               '0011U00001gKy44QAC') -- for edge case: accountid no longer exist
+                )),
 
   -- append account info to invoice
       base as
@@ -69,41 +76,25 @@ view: cohort {
         on abs.account__c= dedup.id
         left join dedup as dd
         on abs.parent_logo__c = dd.id
-        --where dd.type_of_customer__c = 'Agency'
         ),
 
-  -- some invoices under same account are missing parent account info (i.e. account_id = '0011U00001L7AAUQA3' for march)
-  -- so we are filling in missing data
-      account_info as (
-         select distinct
-                account_id,
-                parent_logo__c,
-                ge__c,
-                name,
-                type_of_customer__c,
-                churn_date__c,
-                resurrected_date__c,
-                parent_customertype,
-                parent_name
-          from base where parent_logo__c is not null),
 
 -- 1. aggregate payment by month for each customer, granularity -> user_id
    agg_month_temp as (
        Select
          account_id as user_id,
          date_trunc(dt, month) as payment_month,
-         COALESCE(b.parent_logo__c, a.parent_logo__c) as parent_logo__c,
-         COALESCE(b.ge__c, a.ge__c) as ge__c,
-         COALESCE(b.name, a.name) as name,
-         COALESCE(b.type_of_customer__c, a.type_of_customer__c) as type_of_customer__c,
-         COALESCE(b.parent_customertype, a.parent_customertype) as parent_customertype,
-         COALESCE(b.parent_name, a.parent_name) as parent_name,
+         parent_logo__c,
+         ge__c,
+         name,
+         type_of_customer__c,
+         parent_customertype,
+         parent_name,
          sum(invoice) as monthly_usd
-       From base b
-       left join account_info a
-       using (account_id)
-       where {% condition parent_customertype %} b.parent_customertype {% endcondition %}
-       Group by 1,2,3,4,5,6,7,8),
+       From base
+       where {% condition parent_customertype %} parent_customertype {% endcondition %}
+       Group by 1,2,3,4,5,6,7,8
+       having sum(invoice) > 0), -- refund balanced out some invoices
 
 -- take most recent month's revenue to classify accounts by revenue tiers
     tier as (
@@ -121,8 +112,9 @@ view: cohort {
                    row_number() over (partition by user_id order by payment_month desc) as most_recent
                  from agg_month_temp
                  where monthly_usd is not null
-                 and monthly_usd != 0) a
-             where a.most_recent = 1) b),
+                 and monthly_usd != 0
+                 and payment_month <= date_trunc(current_date(), month)) a -- do not consider future payments (the one time payment for future months)
+             where a.most_recent = 1)),
 
      agg_month as (
         select *
@@ -135,7 +127,7 @@ view: cohort {
      first_month as (
          Select
            user_id,
-           date_trunc(min(payment_month), month) as first_payment_month
+           min(payment_month) as first_payment_month
          From agg_month
          Group by user_id),
 
@@ -173,7 +165,7 @@ view: cohort {
             parent_name,
             a2.cohort_size_fixed,
             a1.first_payment_month,
-            count(distinct a1.user_id) as cohort_size_changing, -- will return 1 for each record, we will sum them up later in defining lookml measures
+            count(distinct a1.user_id) as cohort_size_changing, -- will return 1 for each record, we will sum them up later while defining lookml measures
             sum(a1.monthly_usd) as cohort_usd
         From agg_month_withfirst a1
         join agg_month_cohortsize a2
@@ -188,7 +180,8 @@ view: cohort {
             sum(cohort_usd) over (partition by first_payment_month
                                   order by payment_month RANGE UNBOUNDED PRECEDING) as cumm_sum,
             date_diff(payment_month, first_payment_month, month) as months_since_first
-          From agg_month_withsize a)
+          From agg_month_withsize a
+          where payment_month <= date_trunc(current_date(), month))
 
       Select * from agg_month_sincefirst;;
   }
@@ -199,6 +192,7 @@ view: cohort {
   }
 
   dimension: SF_account_id {
+    label: "account"
     type: string
     sql: ${TABLE}.user_id ;;
   }
@@ -210,6 +204,7 @@ view: cohort {
   }
 
   dimension: parent_SF_accountid {
+    label: "parent_accountid"
     type: string
     sql: ${TABLE}.parent_logo__c ;;
   }
@@ -225,6 +220,7 @@ view: cohort {
   }
 
   dimension: type_of_customer {
+    label: "customer_type"
     type: string
     sql: ${TABLE}.type_of_customer__c ;;
   }
@@ -252,6 +248,7 @@ view: cohort {
   }
 
   dimension: account_revenue {
+    label: "revenue"
     type: number
     sql: ${TABLE}.revenue ;;
   }
