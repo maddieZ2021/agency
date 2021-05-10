@@ -105,7 +105,7 @@ view: SF_account_revenue {
           first_dt as (
               select
                   account_id,
-                  min(dt) as first_month
+                  date_trunc(min(dt), month) as first_month
               from base
               group by 1
           ),

@@ -130,7 +130,7 @@ view: cohort {
      first_month as (
          Select
            user_id,
-           min(payment_month) as first_payment_month
+           date_trunc(min(payment_month), month) as first_payment_month
          From agg_month
          Group by user_id),
 
