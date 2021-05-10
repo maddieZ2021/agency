@@ -26,6 +26,7 @@ view: SF_account_revenue {
                and account__c not in ( '0011U00001ekFIFQA2', -- for resurrected edge case: ge__c = '6048'
                                        '0011U00001AnixWQAR', -- for perpetua test $1 per month
                                        '0011U00001gKy44QAC') -- for edge case: accountid no longer exist
+               and payment_name != '18975' -- for edge case: 2021-01-31 18975 and 18997 redundant
                and (((parent_logo__c is null and description__c like '%Media Fee%') and  -- count amazon media fee
                     (parent_logo__c is null and description__c not like 'Target-Media Cost'))  -- count target media fee
                     or parent_logo__c is not null) -- all managed adspend + platform fee
