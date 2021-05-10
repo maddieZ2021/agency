@@ -12,11 +12,5 @@ persist_with: agency_default_datagroup
 
 explore: SF_account_revenue {
   label: "SF_account_revenue"
-  join: company_billing_status {
-    type: left_outer
-    relationship: many_to_one
-    sql_on: ${SF_account_revenue.company_stripe_id} = cast(${company_billing_status.company_id} as string) ;;
-
-  }
 
 }
