@@ -51,6 +51,7 @@ view: SF_account_revenue {
                 and id not in ('0011U00001ekFIFQA2', -- for resurrected edge case: ge__c = '6048'
                                '0011U00001AnixWQAR', -- for perpetua test $1 per month
                                '0011U00001gKy44QAC') -- for edge case: accountid no longer exist
+                and isdeleted is not true
                 )),
 
     -- append account info to invoice
