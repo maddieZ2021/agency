@@ -132,8 +132,8 @@ view: SF_account_revenue {
                 coalesce(tm.type_of_customer__c, lm.type_of_customer__c) as customer_type,
                 coalesce(tm.parent_customertype, lm.parent_customertype) as parent_customer_type,
                 coalesce(tm.parent_name, lm.parent_name) as parent_name,
-                coalesce(tm.churn_date__c, lm.churn_date__c) as churndate,
-                coalesce(tm.resurrected_date__c, lm.resurrected_date__c) as resurrecteddate,
+                coalesce(tm.churn_date__c, lm.churn_date__c) as churn_date,
+                coalesce(tm.resurrected_date__c, lm.resurrected_date__c) as resurrected_date,
               -- sum up this month's invoice as revenue
                 sum(tm.invoice) as revenue,
               -- retained revenue from last month
