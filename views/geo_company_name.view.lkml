@@ -4,7 +4,7 @@ view: geo_company_name {
 
   dimension: company_id {
     type: string
-    sql: ${TABLE}.company_id ;;
+    sql: cast(${TABLE}.company_id as string) ;;
   }
 
   dimension: company_name {
