@@ -1,7 +1,6 @@
 connection: "perpetua_db"
 
 include: "/*.view.lkml"
-include: "/views/*.view"
 
 explore: cohort {
   join: geo_company_name {
