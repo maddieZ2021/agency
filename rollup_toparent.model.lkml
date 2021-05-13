@@ -19,4 +19,4 @@ include: "/*.view.lkml"                # include all views in the views/ folder 
 #   }
 # }
 
-explore: test {}
+explore: revenue_rollup_toparent {}

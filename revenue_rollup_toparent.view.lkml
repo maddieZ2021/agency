@@ -1,4 +1,4 @@
-view: test {
+view: revenue_rollup_toparent {
   derived_table: {
     sql: With abs as (
           -- deduplicate Stripe - SF invoice info
