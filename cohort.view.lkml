@@ -321,7 +321,6 @@ view: cohort {
       name,
       type_of_customer,
       cohort_size_fixed,
-      first_payment_month,
       account_revenue,
       months_since_first
     ]
