@@ -312,7 +312,6 @@ view: cohort {
 
   set: detail {
     fields: [
-      payment_month,
       parent_customertype,
       parent_SF_accountid,
       parent_name,
